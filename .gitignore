@@ -1,0 +1,13 @@
+# Archivos de Android Studio
+.idea/
+*.iml
+*.iws
+workspace.xml
+misc.xml
+modules.xml
+vcs.xml
+
+# Archivos de build
+build/
+.gradle/
+app/build/
