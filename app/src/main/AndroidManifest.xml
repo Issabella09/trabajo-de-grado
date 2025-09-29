@@ -10,16 +10,35 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Asistente">
+        android:theme="@style/Theme.Asistente"
+        tools:targetApi="31">
+
+        <!-- Actividad principal -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
 
+        <!-- Servicio de lectura de pantalla -->
+        <service
+            android:name=".LecturaPantallaService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:label="Asistente de Voz Accesible"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <!-- Configuración del servicio de accesibilidad -->
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+    </application>
 </manifest>
