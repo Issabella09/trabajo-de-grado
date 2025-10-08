@@ -27,7 +27,7 @@
         <service
             android:name=".LecturaPantallaService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:label="Asistente de Voz Accesible"
+            android:label="Tu Asistente Favorito"
             android:exported="true">
 
             <intent-filter>
