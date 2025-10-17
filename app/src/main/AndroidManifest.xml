@@ -27,7 +27,7 @@
         <service
             android:name=".LecturaPantallaService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:label="Tu Asistente Favorito"
+            android:label="EVA"
             android:exported="true">
 
             <intent-filter>

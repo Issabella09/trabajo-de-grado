@@ -50,7 +50,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            // Configurar español latino
+            // configurar español latino
             val result = textToSpeech.setLanguage(Locale("es", "COL"))
 
             if (result == TextToSpeech.LANG_MISSING_DATA ||
@@ -58,9 +58,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 Log.e(TAG, "❌ El idioma español no está soportado")
             } else {
                 // Configurar voz natural
-                textToSpeech.setPitch(0.95f)     // Tono natural
-                textToSpeech.setSpeechRate(1.0f) // Velocidad normal
-
+                textToSpeech.setPitch(0.95f)     // tono natural
+                textToSpeech.setSpeechRate(1.0f) // velocidad normal
                 Log.d(TAG, "🎤 TextToSpeech listo en español")
                 hablar("Asistente de voz activado")
             }
