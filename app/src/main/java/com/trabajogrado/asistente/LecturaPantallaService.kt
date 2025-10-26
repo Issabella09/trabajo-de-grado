@@ -11,6 +11,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     private lateinit var textToSpeech: TextToSpeech
     private val TAG = "LecturaPantallaService"
+    private var ultimaAppAnunciada: String? = null
 
     override fun onServiceConnected() {
         Log.d(TAG, "✅ Servicio de lectura de pantalla CONECTADO")
@@ -24,37 +25,43 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     private fun configurarServicio() {
         val info = AccessibilityServiceInfo().apply {
-            // Qué eventos queremos escuchar
+            // Configurar qué eventos queremos escuchar
             eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
                     AccessibilityEvent.TYPE_VIEW_FOCUSED or
                     AccessibilityEvent.TYPE_VIEW_SELECTED or
-                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
 
             // Tipo de feedback (voz)
             feedbackType = AccessibilityServiceInfo.FEEDBACK_SPOKEN
 
-            // Tiempo entre eventos
+            // Tiempo de espera para enviar eventos
             notificationTimeout = 100
 
-            // Capacidades del servicio
-            flags = AccessibilityServiceInfo.DEFAULT
+            // Podemos interceptar gestos y leer contenido
+            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                    AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
         }
+            // Permitir leer contenido de la pantalla
+            this.serviceInfo = info
+            Log.d(TAG, "Servicio configurado para leer todas las aplicaciones")
 
-        this.serviceInfo = info
-        Log.d(TAG, "⚙️ Servicio configurado")
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            // Configurar español
-            val result = textToSpeech.setLanguage(Locale("es", "ES"))
+            // configurar español latino
+            val result = textToSpeech.setLanguage(Locale("es", "COL"))
 
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "❌ Idioma español no soportado")
+                Log.e(TAG, "❌ El idioma español no está soportado")
             } else {
+                // Configurar voz natural
+                textToSpeech.setPitch(0.95f)     // tono natural
+                textToSpeech.setSpeechRate(1.0f) // velocidad normal
                 Log.d(TAG, "🎤 TextToSpeech listo en español")
-                hablar("Servicio de lectura activado")
+                hablar("Asistente de voz activado")
             }
         } else {
             Log.e(TAG, "❌ Error al inicializar TextToSpeech")
@@ -63,77 +70,122 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
-            Log.d(TAG, "📱 Evento tipo: ${event.eventType} - Clase: ${event.className}")
+            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName}")
 
             when (event.eventType) {
-                AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                    // Cuando un elemento recibe foco (toque o navegación)
-                    leerContenidoElemento(event)
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                    // Anunciar en qué aplicación o pantalla está
+                    anunciarPantallaActual(event.packageName?.toString())
                 }
 
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                    // Cuando se hace clic en un elemento
-                    leerContenidoElemento(event)
+                    // Leer lo que se tocó
+                    leerElementoTocado(event)
+                }
+
+                AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                    // Leer elementos cuando reciben foco
+                    leerElementoConFoco(event)
                 }
 
                 AccessibilityEvent.TYPE_VIEW_SELECTED -> {
-                    // Cuando se selecciona un elemento
-                    leerContenidoElemento(event)
+                    // Leer elementos seleccionados
+                    leerElementoSeleccionado(event)
                 }
 
                 AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                    // Cuando cambia el texto (editores, búsquedas)
-                    if (event.text?.isNotEmpty() == true) {
-                        val texto = event.text.joinToString(", ")
-                        if (texto.length > 1) {
-                            Log.d(TAG, "📝 Texto cambiado: $texto")
-                            hablar("Texto escrito: $texto")
-                        }
-                    }
-                }
-
-                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                    // Cuando cambia la ventana/pantalla
-                    val nombreApp = when (event.packageName) {
-                        "com.android.launcher3" -> "Inicio"
-                        "com.android.systemui" -> "Sistema"
-                        else -> event.packageName ?: "Aplicación"
-                    }
-                    Log.d(TAG, "🔄 Cambio a: $nombreApp")
-                    hablar("Abriendo $nombreApp")
-                }
-
-                AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                    // Cuando se desplaza la pantalla
-                    Log.d(TAG, "📜 Desplazamiento detectado")
-                    hablar("Desplazando")
+                    // Leer texto escrito en campos
+                    leerTextoEscrito(event)
                 }
             }
         }
     }
 
-    private fun leerContenidoElemento(event: AccessibilityEvent) {
-        val texto = event.text?.joinToString(", ") ?: ""
-        val contenido = event.contentDescription?.toString() ?: ""
+    private fun anunciarPantallaActual(packageName: String?) {
+        val nombreApp = when (packageName) {
+            "com.android.launcher3",
+            "com.google.android.apps.nexuslauncher",
+            "com.sec.android.app.launcher" -> "Pantalla de inicio"
 
-        // Combinar texto y descripción
-        val textoFinal = when {
-            texto.isNotEmpty() && contenido.isNotEmpty() -> "$texto, $contenido"
-            texto.isNotEmpty() -> texto
-            contenido.isNotEmpty() -> contenido
+            "com.whatsapp" -> "WhatsApp"
+            "com.instagram.android" -> "Instagram"
+            "com.facebook.katana" -> "Facebook"
+            "org.telegram.messenger" -> "Telegram"
+            "com.twitter.android" -> "Twitter"
+            "com.android.chrome" -> "Chrome"
+            "com.google.android.gm" -> "Gmail"
+            "com.android.settings" -> "Ajustes"
+            "com.android.dialer" -> "Teléfono"
+            "com.google.android.contacts" -> "Contactos"
+            "com.android.messaging" -> "Mensajes"
+            "com.spotify.music" -> "Spotify"
+            "com.netflix.mediaclient" -> "Netflix"
+            "com.amazon.mShop.android.shopping" -> "Amazon"
+
             else -> null
         }
 
-        if (textoFinal != null && textoFinal != "null" && textoFinal.length > 1) {
-            Log.d(TAG, "🔊 Leyendo elemento: $textoFinal")
-            hablar(textoFinal)
-        } else {
-            // Si no hay texto, leer el tipo de elemento
-            val tipoElemento = obtenerTipoElemento(event.className?.toString())
-            if (tipoElemento != null) {
-                Log.d(TAG, "🔊 Elemento sin texto: $tipoElemento")
-                hablar(tipoElemento)
+        // Solo anunciar si es una app diferente a la última anunciada
+        if (nombreApp != null && nombreApp != ultimaAppAnunciada) {
+            Log.d(TAG, "🔄 Cambiando a: $nombreApp")
+            hablar(nombreApp)
+            ultimaAppAnunciada = nombreApp
+        }
+    }
+
+    private fun leerElementoTocado(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        if (texto.isNotBlank()) {
+            Log.d(TAG, "👆 Elemento tocado: $texto")
+            hablar(texto)
+        }
+    }
+
+    private fun leerElementoConFoco(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        val tipoElemento = obtenerTipoElemento(event.className?.toString())
+
+        if (texto.isNotBlank()) {
+            val mensaje = when {
+                tipoElemento != null -> "$texto, $tipoElemento"
+                else -> texto
             }
+            Log.d(TAG, "🎯 Elemento con foco: $mensaje")
+            hablar(mensaje)
+        } else if (tipoElemento != null) {
+            Log.d(TAG, "🎯 Elemento con foco: $tipoElemento")
+            hablar(tipoElemento)
+        }
+    }
+
+    private fun leerElementoSeleccionado(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        if (texto.isNotBlank()) {
+            Log.d(TAG, "✅ Elemento seleccionado: $texto")
+            hablar("Seleccionado: $texto")
+        }
+    }
+
+    private fun leerTextoEscrito(event: AccessibilityEvent) {
+        val texto = event.text?.joinToString("") { it.toString() } ?: ""
+        // Solo leer texto si es un campo de entrada y tiene contenido
+        if (texto.isNotBlank() && event.className?.toString()?.contains("EditText") == true) {
+            if (texto.length > 2 && texto.length < 50) { // No leer textos muy largos
+                Log.d(TAG, "📝 Texto escrito: $texto")
+                //hablar(texto) // Opcional: comentado para no ser intrusivo
+            }
+        }
+    }
+
+    private fun obtenerTextoDelEvento(event: AccessibilityEvent): String {
+        val texto = event.text?.joinToString(" ") { it.toString() } ?: ""
+        val descripcion = event.contentDescription?.toString() ?: ""
+
+        // Preferir la descripción si está disponible, sino el texto
+        return when {
+            descripcion.isNotBlank() -> descripcion
+            texto.isNotBlank() -> texto
+            else -> ""
         }
     }
 
@@ -147,6 +199,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             className.contains("CheckBox", ignoreCase = true) -> "Casilla"
             className.contains("RadioButton", ignoreCase = true) -> "Opción"
             className.contains("Switch", ignoreCase = true) -> "Interruptor"
+            className.contains("SeekBar", ignoreCase = true) -> "Barra"
+            className.contains("Spinner", ignoreCase = true) -> "Lista"
             else -> null
         }
     }
