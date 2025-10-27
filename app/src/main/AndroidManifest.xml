@@ -21,7 +21,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
+        <activity
+            android:name=".ControlActivity"
+            android:label="Control del Asistente"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente" />
 
         <!-- Servicio de lectura de pantalla -->
         <service
