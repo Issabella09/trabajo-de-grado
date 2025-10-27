@@ -48,6 +48,36 @@
 
     </LinearLayout>
 
+    <!-- Selector de Niveles (visible solo cuando el switch está activado) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nivel de lectura:"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupNiveles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <RadioButton
+            android:id="@+id/radioNivel1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nivel 1: Solo mensajes (WhatsApp, Telegram, etc.)"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/radioNivel2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nivel 2: Todo el contenido" />
+
+    </RadioGroup>
+
     <Button
         android:id="@+id/btnVolver"
         android:layout_width="match_parent"

@@ -19,20 +19,19 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     // Métodos para controlar el servicio desde la app
     fun activarLectura() {
         Log.d(TAG, "🎯 ACTIVANDO lectura de pantalla por comando del usuario")
-        // Aquí podrías activar flags o variables de control
-        lecturaActiva = true
+        Companion.lecturaActiva = true  // ← Usar la del companion
         hablar("Lectura de pantalla activada")
     }
 
     fun desactivarLectura() {
         Log.d(TAG, "🎯 DESACTIVANDO lectura de pantalla por comando del usuario")
-        lecturaActiva = false
+        Companion.lecturaActiva = false  // ← Usar la del companion
         textToSpeech.stop()
         hablar("Lectura de pantalla desactivada")
     }
 
     fun estaActivo(): Boolean {
-        return lecturaActiva
+        return Companion.lecturaActiva  // ← Usar la del companion
     }
 
     // Metodo para recibir comandos desde fuera del servicio
@@ -43,7 +42,26 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     // Metodo estático para obtener la instancia del servicio (simplificado)
     companion object {
+
+        private var nivelLectura: Int = 1 // Por defecto nivel 1
+        private var lecturaActiva: Boolean = false
         private var instance: LecturaPantallaService? = null
+
+        fun activarLecturaDesdeExterno(nivel: Int = 1) {
+            nivelLectura = nivel
+            lecturaActiva = true
+            instance?.activarLectura() // Llama a tu método existente
+            Log.d("LecturaService", "📢 Lectura activada - Nivel: $nivel")
+        }
+
+        fun actualizarNivelLectura(nuevoNivel: Int) {
+            nivelLectura = nuevoNivel
+            Log.d("LecturaService", "🔄 Nivel actualizado: $nuevoNivel")
+        }
+
+        fun obtenerNivelActual(): Int {
+            return nivelLectura
+        }
 
         fun getInstance(): LecturaPantallaService? {
             return instance
@@ -80,7 +98,10 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                     AccessibilityEvent.TYPE_VIEW_FOCUSED or
                     AccessibilityEvent.TYPE_VIEW_SELECTED or
                     AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
+                    AccessibilityEvent.TYPE_VIEW_SCROLLED or
+                    AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
+                    AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
 
             // Tipo de feedback (voz)
             feedbackType = AccessibilityServiceInfo.FEEDBACK_SPOKEN
@@ -120,33 +141,156 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        event?.let {
-            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName}")
+        if (!Companion.lecturaActiva) return  // ← CAMBIA: lecturaActiva → Companion.lecturaActiva
 
+        event?.let {
+            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName} - Nivel: ${Companion.nivelLectura}")  // ← CAMBIA: nivelLectura → Companion.nivelLectura
+
+            when (Companion.nivelLectura) {  // ← CAMBIA: nivelLectura → Companion.nivelLectura
+                1 -> procesarEventoNivel1(event)
+                2 -> procesarEventoNivel2(event)
+                else -> procesarEventoNivel1(event)
+            }
+        }
+    }
+
+    private fun procesarEventoNivel1(event: AccessibilityEvent) {
+        // SOLO procesar si es una app de mensajería
+        if (esAppDeMensajeria(event.packageName?.toString())) {
             when (event.eventType) {
                 AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                    // Anunciar en qué aplicación o pantalla está
                     anunciarPantallaActual(event.packageName?.toString())
                 }
-
                 AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                    // Leer lo que se tocó
                     leerElementoTocado(event)
                 }
-
                 AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                    // Leer elementos cuando reciben foco
                     leerElementoConFoco(event)
                 }
-
                 AccessibilityEvent.TYPE_VIEW_SELECTED -> {
-                    // Leer elementos seleccionados
                     leerElementoSeleccionado(event)
                 }
-
                 AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                    // Leer texto escrito en campos
                     leerTextoEscrito(event)
+                }
+                AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                    // Leer notificaciones de mensajería
+                    leerNotificacionMensaje(event)
+                }
+            }
+        } else {
+            Log.d(TAG, "🔇 Nivel 1: Ignorando evento en app no mensajería")
+        }
+    }
+
+    private fun procesarEventoNivel2(event: AccessibilityEvent) {
+        // LEER TODO en cualquier app - SIN FILTROS
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                anunciarPantallaActual(event.packageName?.toString())
+            }
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                leerElementoTocado(event)
+            }
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                leerElementoConFoco(event)
+            }
+            AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                leerElementoSeleccionado(event)
+            }
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
+                leerTextoEscrito(event)
+            }
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                leerNotificacionMensaje(event)
+            }
+            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                leerElementoDesplazado(event)
+            }
+            AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                leerElementoLargoTocado(event)
+            }
+            // Agregar más tipos de eventos para nivel 2
+            else -> {
+                // Para cualquier otro tipo de evento, intentar leerlo
+                leerEventoGenerico(event)
+            }
+        }
+    }
+
+    private fun esAppDeMensajeria(packageName: String?): Boolean {
+        return when (packageName) {
+            "com.whatsapp", // WhatsApp
+            "com.whatsapp.w4b", // WhatsApp Business
+            "org.telegram.messenger", // Telegram
+            "org.telegram.messenger.web", // Telegram Web
+            "com.instagram.android", // Instagram
+            "com.facebook.katana", // Facebook
+            "com.facebook.orca", // Facebook Messenger
+            "com.facebook.mlite", // Facebook Lite
+            "com.discord", // Discord
+            "com.skype.raider", // Skype
+            "com.snapchat.android", // Snapchat
+            "com.google.android.talk", // Google Hangouts/Meet
+            "com.microsoft.teams", // Microsoft Teams
+            "com.signal", // Signal
+            "org.thoughtcrime.securesms", // Signal (alternativo)
+            "com.viber.voip" -> true // Viber
+            else -> false
+        }
+    }
+
+    private fun leerNotificacionMensaje(event: AccessibilityEvent) {
+        try {
+            val texto = event.text?.joinToString(" ") ?: ""
+            if (texto.isNotBlank()) {
+                // Filtrar solo notificaciones que parezcan mensajes
+                if (texto.contains("mensaje", true) ||
+                    texto.contains("message", true) ||
+                    texto.contains("chat", true) ||
+                    texto.contains("WhatsApp", true) ||
+                    texto.contains("Telegram", true) ||
+                    texto.contains("Instagram", true) ||
+                    texto.contains("Facebook", true)) {
+
+                    hablar("Nueva notificación: $texto")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error leyendo notificación: ${e.message}")
+        }
+    }
+
+    // AGREGAR ESTOS NUEVOS MÉTODOS para nivel 2:
+
+    private fun leerElementoDesplazado(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        if (texto.isNotBlank()) {
+            Log.d(TAG, "🔄 Elemento desplazado: $texto")
+            if (Companion.lecturaActiva) {
+                hablar("Desplazando: $texto")
+            }
+        }
+    }
+
+    private fun leerElementoLargoTocado(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        if (texto.isNotBlank()) {
+            Log.d(TAG, "👆🔒 Elemento largo tocado: $texto")
+            if (Companion.lecturaActiva) {
+                hablar("Mantener presionado: $texto")
+            }
+        }
+    }
+
+    private fun leerEventoGenerico(event: AccessibilityEvent) {
+        val texto = obtenerTextoDelEvento(event)
+        if (texto.isNotBlank()) {
+            Log.d(TAG, "📝 Evento genérico [${event.eventType}]: $texto")
+            if (Companion.lecturaActiva) {
+                // Solo leer si es un texto significativo (no muy largo)
+                if (texto.length < 100) {
+                    hablar(texto)
                 }
             }
         }
@@ -178,9 +322,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         // Solo anunciar si es una app diferente a la última anunciada
         if (nombreApp != null && nombreApp != ultimaAppAnunciada) {
-            // hablar(nombreApp)  // COMENTADO: No hablar automáticamente
             Log.d(TAG, "🔄 App detectada: $nombreApp (SILENCIO)")
-            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+            if (Companion.lecturaActiva) {  // ← CAMBIADO: Usar Companion.lecturaActiva
                 hablar(nombreApp)
             }
             ultimaAppAnunciada = nombreApp
@@ -191,10 +334,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
             Log.d(TAG, "👆 Elemento tocado (SILENCIO): $texto")
-            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+            if (Companion.lecturaActiva) {  // ← CAMBIADO
                 hablar(texto)
             }
         }
+
     }
 
     private fun leerElementoConFoco(event: AccessibilityEvent) {
@@ -207,12 +351,12 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 else -> texto
             }
             Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $mensaje")
-            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+            if (Companion.lecturaActiva) {
                 hablar(mensaje)
             }
         } else if (tipoElemento != null) {
             Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $tipoElemento")
-            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+            if (Companion.lecturaActiva) {  // ← ELIMINA el "if" duplicado
                 hablar(tipoElemento)
             }
         }
@@ -222,7 +366,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
             Log.d(TAG, "✅ Elemento seleccionado (SILENCIO): $texto")
-            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+            if (Companion.lecturaActiva) {  // ← CAMBIADO
                 hablar("Seleccionado: $texto")
             }
         }
