@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tu Asistente Favorito"
+        android:text="Asistente EVA"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="32dp" />
@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Para activar el servicio de lectura de pantalla:"
+        android:text="Para activar el servicio de lectura de pantalla primero debes dar permisos de accesibilidad:"
         android:textSize="16sp"
         android:layout_marginBottom="16dp" />
 
@@ -44,7 +44,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="1. Toca el botón de arriba\n2. Busca 'Tu Asistente Favorito'\n3. Activa el interruptor"
+        android:text="1. Toca el botón de arriba\n2. Busca 'Tu Asistente Favorito'\n3. Activa el interruptor\n👇 Después de activar en ajustes:\n• Vuelve a esta aplicación\n• Podrás encender/apagar la lectura\n• Controlarás cuándo funciona"
         android:textSize="14sp"
         android:lineSpacingExtra="8dp" />
 

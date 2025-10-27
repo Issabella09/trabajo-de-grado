@@ -6,21 +6,71 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import java.util.Locale
+import android.content.Intent
+import android.app.Service
 
 class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListener {
 
     private lateinit var textToSpeech: TextToSpeech
     private val TAG = "LecturaPantallaService"
     private var ultimaAppAnunciada: String? = null
+    private var lecturaActiva: Boolean = false
+
+    // Métodos para controlar el servicio desde la app
+    fun activarLectura() {
+        Log.d(TAG, "🎯 ACTIVANDO lectura de pantalla por comando del usuario")
+        // Aquí podrías activar flags o variables de control
+        lecturaActiva = true
+        hablar("Lectura de pantalla activada")
+    }
+
+    fun desactivarLectura() {
+        Log.d(TAG, "🎯 DESACTIVANDO lectura de pantalla por comando del usuario")
+        lecturaActiva = false
+        textToSpeech.stop()
+        hablar("Lectura de pantalla desactivada")
+    }
+
+    fun estaActivo(): Boolean {
+        return lecturaActiva
+    }
+
+    // Metodo para recibir comandos desde fuera del servicio
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.d(TAG, "Servicio desvinculado")
+        return super.onUnbind(intent)
+    }
+
+    // Metodo estático para obtener la instancia del servicio (simplificado)
+    companion object {
+        private var instance: LecturaPantallaService? = null
+
+        fun getInstance(): LecturaPantallaService? {
+            return instance
+        }
+
+        fun activarLecturaDesdeExterno() {
+            instance?.activarLectura()
+        }
+
+        fun desactivarLecturaDesdeExterno() {
+            instance?.desactivarLectura()
+        }
+    }
 
     override fun onServiceConnected() {
         Log.d(TAG, "✅ Servicio de lectura de pantalla CONECTADO")
+        instance = this  // ← GUARDAR INSTANCIA
 
         // Configurar el servicio de accesibilidad
         configurarServicio()
 
-        // Inicializar TextToSpeech
+        // Inicializar TextToSpeech pero NO hablar automáticamente
         textToSpeech = TextToSpeech(this, this)
+
+        // IMPORTANTE: No hablar ni activar funcionalidad aquí
+        // El usuario controlará cuándo activar desde la app
+        Log.d(TAG, "⚠️ Servicio configurado pero NO activado - Esperando comando del usuario")
     }
 
     private fun configurarServicio() {
@@ -57,11 +107,12 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e(TAG, "❌ El idioma español no está soportado")
             } else {
-                // Configurar voz natural
-                textToSpeech.setPitch(0.95f)     // tono natural
-                textToSpeech.setSpeechRate(1.0f) // velocidad normal
-                Log.d(TAG, "🎤 TextToSpeech listo en español")
-                hablar("Asistente de voz activado")
+                // NO hablar automáticamente - solo configurar
+                textToSpeech.setPitch(0.95f)
+                textToSpeech.setSpeechRate(1.0f)
+
+                Log.d(TAG, "🎤 TextToSpeech listo pero SILENCIADO - Esperando activación")
+                // NO llamar a hablar() aquí
             }
         } else {
             Log.e(TAG, "❌ Error al inicializar TextToSpeech")
@@ -127,8 +178,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         // Solo anunciar si es una app diferente a la última anunciada
         if (nombreApp != null && nombreApp != ultimaAppAnunciada) {
-            Log.d(TAG, "🔄 Cambiando a: $nombreApp")
-            hablar(nombreApp)
+            // hablar(nombreApp)  // COMENTADO: No hablar automáticamente
+            Log.d(TAG, "🔄 App detectada: $nombreApp (SILENCIO)")
+            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+                hablar(nombreApp)
+            }
             ultimaAppAnunciada = nombreApp
         }
     }
@@ -136,8 +190,10 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerElementoTocado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "👆 Elemento tocado: $texto")
-            hablar(texto)
+            Log.d(TAG, "👆 Elemento tocado (SILENCIO): $texto")
+            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+                hablar(texto)
+            }
         }
     }
 
@@ -150,19 +206,25 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 tipoElemento != null -> "$texto, $tipoElemento"
                 else -> texto
             }
-            Log.d(TAG, "🎯 Elemento con foco: $mensaje")
-            hablar(mensaje)
+            Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $mensaje")
+            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+                hablar(mensaje)
+            }
         } else if (tipoElemento != null) {
-            Log.d(TAG, "🎯 Elemento con foco: $tipoElemento")
-            hablar(tipoElemento)
+            Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $tipoElemento")
+            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+                hablar(tipoElemento)
+            }
         }
     }
 
     private fun leerElementoSeleccionado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "✅ Elemento seleccionado: $texto")
-            hablar("Seleccionado: $texto")
+            Log.d(TAG, "✅ Elemento seleccionado (SILENCIO): $texto")
+            if (lecturaActiva) {  // ← SOLO HABLAR SI ESTÁ ACTIVO
+                hablar("Seleccionado: $texto")
+            }
         }
     }
 
@@ -223,4 +285,5 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             textToSpeech.speak(texto, TextToSpeech.QUEUE_FLUSH, null, null)
         }
     }
+
 }
