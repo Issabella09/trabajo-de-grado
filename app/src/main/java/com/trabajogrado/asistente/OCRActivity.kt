@@ -24,6 +24,11 @@ import java.util.concurrent.Executors
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
+// AGREGA ESTOS IMPORTS NUEVOS PARA ML KIT
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+
 class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var textToSpeech: TextToSpeech
@@ -132,43 +137,57 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun procesarImagenConOCR(bitmap: Bitmap) {
-        Log.d(TAG, "Iniciando procesamiento OCR...")
-        txtInstrucciones.text = "🔍 Procesando texto..."
+        Log.d(TAG, "Iniciando procesamiento OCR con ML Kit...")
+        txtInstrucciones.text = "Analizando texto..."
 
         try {
-            // VERSIÓN SIMPLIFICADA - Sin ML Kit por ahora
-            Log.d(TAG, "OCR temporal - mostrando imagen capturada")
+            // CONVERTIR bitmap a imagen que ML Kit entienda
+            val image = InputImage.fromBitmap(bitmap, 0)
 
-            // Simular procesamiento OCR (placeholder)
-            txtInstrucciones.text = "✅ Imagen capturada - OCR pendiente"
+            // CREAR el reconocedor de texto
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-            // Mostrar mensaje temporal
-            mostrarResultadoOCR("🔧 Función OCR en desarrollo\n\n" +
-                    "Imagen capturada correctamente.\n" +
-                    "Próximamente: Reconocimiento de texto con ML Kit")
+            // PROCESAR la imagen con ML Kit
+            recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    // ✅ ÉXITO: Texto detectado
+                    val textoDetectado = visionText.text
 
-            // Aquí podrías guardar la imagen temporalmente
-            // o procesarla con otra librería OCR
+                    if (textoDetectado.isNotEmpty()) {
+                        Log.d(TAG, "Se detectó: $textoDetectado")
+                        txtInstrucciones.text = "Texto detectado"
+
+                        // Mostrar resultado
+                        mostrarResultadoOCR("TEXTO DETECTADO:\n\n$textoDetectado")
+
+                        // Leer automáticamente
+                        hablar("Texto detectado: $textoDetectado")
+
+                    } else {
+                        // ❌ No se detectó texto
+                        Log.d(TAG, "No se detectó texto")
+                        txtInstrucciones.text = "No se encontró texto"
+                        mostrarResultadoOCR("No se detectó texto en la imagen\n\nApunta a texto más claro o acércate más.")
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    // ❌ ERROR en el procesamiento
+                    Log.e(TAG, "❌ Error en ML Kit: ${exception.message}", exception)
+                    txtInstrucciones.text = "❌ Error en OCR"
+                    mostrarResultadoOCR("❌ Error al procesar imagen:\n${exception.message}")
+                }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error al procesar imagen: ${e.message}", e)
-            txtInstrucciones.text = "❌ Error al procesar imagen"
+            Log.e(TAG, "❌ Error general: ${e.message}", e)
+            txtInstrucciones.text = "❌ Error al procesar"
+            mostrarResultadoOCR("❌ Error: ${e.message}")
         }
     }
 
     private fun mostrarResultadoOCR(texto: String) {
         runOnUiThread {
-            // Mostrar en el TextView
+            // Solo mostrar en el TextView (sin diálogo)
             txtResultado.text = texto
-
-            // Y también en un diálogo
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Resultado")
-                .setMessage(texto)
-                .setPositiveButton("Aceptar") { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .show()
         }
     }
 
@@ -177,7 +196,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val imageCapture = imageCapture ?: run {
             Log.e(TAG, "ImageCapture no está listo")
-            txtInstrucciones.text = "❌ Cámara no lista, espera un momento"
+            txtInstrucciones.text = "La cámara aún no está lista, espera un momento"
             return
         }
 
@@ -205,7 +224,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
                 override fun onError(exception: androidx.camera.core.ImageCaptureException) {
                     Log.e(TAG, "Error al tomar foto: ${exception.message}", exception)
-                    txtInstrucciones.text = "❌ Error al tomar foto"
+                    txtInstrucciones.text = "Error al tomar foto"
                 }
             }
         )
@@ -283,7 +302,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = textToSpeech.setLanguage(Locale("es", "ES"))
+            val result = textToSpeech.setLanguage(Locale("es", "CO"))
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e(TAG, "❌ Idioma español no soportado")
