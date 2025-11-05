@@ -8,21 +8,18 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.util.Locale
-import androidx.core.content.ContextCompat
-import androidx.core.app.ActivityCompat
-import android.content.pm.PackageManager
-
-// IMPORTS CORRECTOS PARA CAMERAX - PEGA ESTOS
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.view.PreviewView
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+
+import android.net.Uri
+import androidx.core.content.ContextCompat
+import androidx.core.app.ActivityCompat
+import android.content.pm.PackageManager
 
 class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -35,180 +32,9 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var txtInstrucciones: TextView
     private val TAG = "OCRActivity"
 
-    // CONSTANTES NUEVAS PARA PERMISOS - AGREGA ESTAS LÍNEAS
-    private val CAMERA_PERMISSION_CODE = 100
-    private val GALLERY_PERMISSION_CODE = 101
-
-    // VARIABLES NUEVAS PARA CAMERAX - AGREGA ESTAS LÍNEAS
-    private lateinit var previewView: PreviewView
-    private lateinit var cameraExecutor: java.util.concurrent.ExecutorService
-    private var imageCapture: androidx.camera.core.ImageCapture? = null
-
-    private fun verificarPermisosCamara() {
-        val permisosCamara = arrayOf(android.Manifest.permission.CAMERA)
-
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-            // Pedir permisos
-            ActivityCompat.requestPermissions(this, permisosCamara, CAMERA_PERMISSION_CODE)
-        } else {
-            // Ya tiene permisos, podemos abrir cámara
-            abrirCamara()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        when (requestCode) {
-            CAMERA_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permiso concedido, abrir cámara
-                    abrirCamara()
-                } else {
-                    // Permiso denegado
-                    Log.e(TAG, "Permiso de cámara denegado")
-                    txtInstrucciones.text = "❌ Se necesitan permisos de cámara"
-                }
-            }
-        }
-    }
-
-    private fun abrirCamara() {
-        Log.d(TAG, "Iniciando cámara con CameraX")
-
-        // Mostrar vista previa y ocultar instrucciones temporales
-        previewView.visibility = android.view.View.VISIBLE
-        txtInstrucciones.text = "📸 Apunta la cámara al texto"
-
-        // Ocultar botones temporales y mostrar botón de captura
-        btnTomarFoto.text = "📷 Capturar Foto"
-        btnTomarFoto.setOnClickListener {
-            tomarFoto()
-        }
-
-        // Configurar CameraX
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-        cameraProviderFuture.addListener({
-            try {
-                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-                // Preview
-                val preview = Preview.Builder()
-                    .build()
-                    .also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
-                    }
-
-                // ImageCapture
-                imageCapture = ImageCapture.Builder()
-                    .build()
-
-                // Seleccionar cámara trasera
-                val cameraSelector = androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
-
-                // Unbind use cases antes de rebind
-                cameraProvider.unbindAll()
-
-                // Bind use cases al ciclo de vida de la cámara
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture
-                )
-
-            } catch (exc: Exception) {
-                Log.e(TAG, "Error al bindear use cases", exc)
-                txtInstrucciones.text = "❌ Error al iniciar cámara"
-            }
-
-        }, ContextCompat.getMainExecutor(this)) // ← CORREGIDO AQUÍ
-
-        // Inicializar executor para procesar imágenes
-        cameraExecutor = Executors.newSingleThreadExecutor()
-    }
-
-    private fun procesarImagenConOCR(bitmap: Bitmap) {
-        Log.d(TAG, "Iniciando procesamiento OCR...")
-        txtInstrucciones.text = "🔍 Procesando texto..."
-
-        try {
-            // VERSIÓN SIMPLIFICADA - Sin ML Kit por ahora
-            Log.d(TAG, "OCR temporal - mostrando imagen capturada")
-
-            // Simular procesamiento OCR (placeholder)
-            txtInstrucciones.text = "✅ Imagen capturada - OCR pendiente"
-
-            // Mostrar mensaje temporal
-            mostrarResultadoOCR("🔧 Función OCR en desarrollo\n\n" +
-                    "Imagen capturada correctamente.\n" +
-                    "Próximamente: Reconocimiento de texto con ML Kit")
-
-            // Aquí podrías guardar la imagen temporalmente
-            // o procesarla con otra librería OCR
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error al procesar imagen: ${e.message}", e)
-            txtInstrucciones.text = "❌ Error al procesar imagen"
-        }
-    }
-
-    private fun mostrarResultadoOCR(texto: String) {
-        runOnUiThread {
-            // Mostrar en el TextView
-            txtResultado.text = texto
-
-            // Y también en un diálogo
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Resultado")
-                .setMessage(texto)
-                .setPositiveButton("Aceptar") { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .show()
-        }
-    }
-
-    private fun tomarFoto() {
-        Log.d(TAG, "Tomando foto...")
-
-        val imageCapture = imageCapture ?: run {
-            Log.e(TAG, "ImageCapture no está listo")
-            txtInstrucciones.text = "❌ Cámara no lista, espera un momento"
-            return
-        }
-
-        // Crear archivo temporal para la foto
-        val photoFile = java.io.File(
-            externalMediaDirs.firstOrNull(),
-            "${System.currentTimeMillis()}.jpg"
-        )
-
-        val outputOptions = androidx.camera.core.ImageCapture.OutputFileOptions.Builder(photoFile)
-            .build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : androidx.camera.core.ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: androidx.camera.core.ImageCapture.OutputFileResults) {
-                    Log.d(TAG, "Foto guardada: ${photoFile.absolutePath}")
-                    txtInstrucciones.text = "✅ Foto tomada - Procesando texto..."
-
-                    // Procesar la imagen con OCR
-                    val bitmap = android.graphics.BitmapFactory.decodeFile(photoFile.absolutePath)
-                    procesarImagenConOCR(bitmap)
-                }
-
-                override fun onError(exception: androidx.camera.core.ImageCaptureException) {
-                    Log.e(TAG, "Error al tomar foto: ${exception.message}", exception)
-                    txtInstrucciones.text = "❌ Error al tomar foto"
-                }
-            }
-        )
+    private companion object {
+        const val REQUEST_CODE_GALERIA = 200
+        const val REQUEST_CODE_PERMISO_ALMACENAMIENTO = 201
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -220,6 +46,170 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         inicializarTextToSpeech()
     }
 
+    private fun procesarImagenConOCR(bitmap: Bitmap) {
+        Log.d(TAG, "Iniciando procesamiento OCR con ML Kit...")
+        txtInstrucciones.text = "Analizando texto..."
+
+        try {
+            // CONVERTIR bitmap a imagen que ML Kit entienda
+            val image = InputImage.fromBitmap(bitmap, 0)
+
+            // CREAR el reconocedor de texto
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+            // PROCESAR la imagen con ML Kit
+            recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    // ✅ ÉXITO: Texto detectado
+                    val textoDetectado = visionText.text
+
+                    if (textoDetectado.isNotEmpty()) {
+                        Log.d(TAG, "Se detectó: $textoDetectado")
+                        txtInstrucciones.text = "Texto detectado"
+
+                        // Mostrar resultado
+                        mostrarResultadoOCR("TEXTO DETECTADO:\n\n$textoDetectado")
+
+                        // Leer automáticamente
+                        hablar("Texto detectado: $textoDetectado")
+
+                    } else {
+                        // ❌ No se detectó texto
+                        Log.d(TAG, "No se detectó texto")
+                        txtInstrucciones.text = "No se encontró texto"
+                        mostrarResultadoOCR("No se detectó texto en la imagen\n\nApunta a texto más claro o acércate más.")
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    // ❌ ERROR en el procesamiento
+                    Log.e(TAG, "❌ Error en ML Kit: ${exception.message}", exception)
+                    txtInstrucciones.text = "❌ Error en OCR"
+                    mostrarResultadoOCR("❌ Error al procesar imagen:\n${exception.message}")
+                }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error general: ${e.message}", e)
+            txtInstrucciones.text = "❌ Error al procesar"
+            mostrarResultadoOCR("❌ Error: ${e.message}")
+        }
+    }
+
+    private fun abrirCamaraPantallaCompleta() {
+        val intent = Intent(this, CameraActivity::class.java)
+        startActivityForResult(intent, 100)
+    }
+
+    private fun abrirGaleria() {
+        Log.d(TAG, "Abriendo galería...")
+
+        // Verificar si tenemos permiso de almacenamiento
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Android 10+ - No necesita permiso explícito para galería
+            lanzarIntentGaleria()
+        } else {
+            // Android 9 o inferior - Necesita permiso
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                lanzarIntentGaleria()
+            } else {
+                // Solicitar permiso
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    REQUEST_CODE_PERMISO_ALMACENAMIENTO
+                )
+            }
+        }
+    }
+
+    private fun lanzarIntentGaleria() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent, REQUEST_CODE_GALERIA)
+    }
+
+    private fun mostrarResultadoOCR(texto: String) {
+        runOnUiThread {
+            // Solo mostrar en el TextView (sin diálogo)
+            txtResultado.text = texto
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            100 -> { // Cámara
+                if (resultCode == RESULT_OK) {
+                    val fotoPath = data?.getStringExtra("foto_path")
+                    if (fotoPath != null) {
+                        Log.d(TAG, "Foto recibida: $fotoPath")
+                        txtInstrucciones.text = "✅ Foto recibida - Procesando..."
+                        val bitmap = BitmapFactory.decodeFile(fotoPath)
+                        procesarImagenConOCR(bitmap)
+                    }
+                } else {
+                    Log.d(TAG, "Captura cancelada por el usuario")
+                    txtInstrucciones.text = "Captura cancelada"
+                }
+            }
+
+            REQUEST_CODE_GALERIA -> { // Galería
+                if (resultCode == RESULT_OK && data != null) {
+                    Log.d(TAG, "Imagen seleccionada de galería")
+                    txtInstrucciones.text = "✅ Imagen seleccionada - Procesando..."
+
+                    try {
+                        val uri = data.data
+                        if (uri != null) {
+                            val inputStream = contentResolver.openInputStream(uri)
+                            val bitmap = BitmapFactory.decodeStream(inputStream)
+                            inputStream?.close()
+
+                            if (bitmap != null) {
+                                procesarImagenConOCR(bitmap)
+                            } else {
+                                Log.e(TAG, "Error al decodificar bitmap desde galería")
+                                txtInstrucciones.text = "Error al cargar imagen"
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al procesar imagen de galería: ${e.message}", e)
+                        txtInstrucciones.text = "Error al procesar imagen"
+                    }
+                } else {
+                    Log.d(TAG, "Selección de galería cancelada")
+                    txtInstrucciones.text = "Selección cancelada"
+                }
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_CODE_PERMISO_ALMACENAMIENTO -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permiso concedido, abrir galería
+                    lanzarIntentGaleria()
+                } else {
+                    // Permiso denegado
+                    Log.e(TAG, "Permiso de almacenamiento denegado")
+                    txtInstrucciones.text = "Se necesita permiso para acceder a la galería"
+                    mostrarResultadoOCR("❌ Permiso denegado. No se puede acceder a la galería.")
+                }
+            }
+        }
+    }
+
     private fun inicializarVistas() {
         // Conectar variables con los elementos del layout
         btnTomarFoto = findViewById(R.id.btnTomarFoto)
@@ -228,17 +218,16 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnVolver = findViewById(R.id.btnVolver)
         txtResultado = findViewById(R.id.txtResultado)
         txtInstrucciones = findViewById(R.id.txtInstrucciones)
-        previewView = findViewById(R.id.previewView)
 
         // Configurar click listeners
         btnTomarFoto.setOnClickListener {
             Log.d(TAG, "Botón Tomar Foto presionado")
-            verificarPermisosCamara()
+            abrirCamaraPantallaCompleta()
         }
 
         btnElegirGaleria.setOnClickListener {
             Log.d(TAG, "Botón Galería presionado")
-            probarOCRConEjemplo() // Temporal - luego será galería real
+            abrirGaleria()
         }
 
         btnLeerVoz.setOnClickListener {
@@ -264,7 +253,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
      */
     private fun probarOCRConEjemplo() {
         // Ya no usamos ejemplo simulado, usamos cámara real
-        verificarPermisosCamara()
+        abrirCamaraPantallaCompleta()
     }
 
     /**
@@ -283,7 +272,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = textToSpeech.setLanguage(Locale("es", "ES"))
+            val result = textToSpeech.setLanguage(Locale("es", "CO"))
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e(TAG, "❌ Idioma español no soportado")

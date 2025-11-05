@@ -45,7 +45,7 @@
         android:id="@+id/btnAbrirOCR"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🔤 Lector de Texto (OCR)"
+        android:text="Lector de Texto"
         android:textColor="@color/white"
         android:backgroundTint="@color/naranja_oscuro"
         android:layout_marginBottom="16dp"
