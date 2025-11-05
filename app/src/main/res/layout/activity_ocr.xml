@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Lector de Texto (OCR)"
+        android:text="Lector de Texto"
         android:textSize="28sp"
         android:textStyle="bold"
         android:textColor="@color/naranja_primario"
@@ -22,7 +22,7 @@
         android:id="@+id/btnTomarFoto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="📸 Tomar Foto con Cámara"
+        android:text="Tomar Foto con Cámara"
         android:textColor="@color/white"
         android:backgroundTint="@color/naranja_primario"
         android:layout_marginBottom="16dp"
@@ -32,14 +32,13 @@
         android:id="@+id/btnElegirGaleria"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🖼️ Elegir de Galería"
+        android:text="Elegir de Galería"
         android:textColor="@color/white"
         android:backgroundTint="@color/naranja_oscuro"
         android:layout_marginBottom="30dp"
         android:textSize="16sp" />
 
     <!-- Área para mostrar imagen o texto detectado -->
-    <!-- Vista previa de la cámara - REEMPLAZA EL TextView -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="match_parent"
@@ -58,24 +57,34 @@
         android:background="@color/naranja_claro"
         android:layout_marginBottom="20dp" />
 
-    <TextView
-        android:id="@+id/txtResultado"
+    <!-- Cuadro de texto -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:text="Aquí aparecerá el texto detectado..."
-        android:textSize="14sp"
-        android:background="#F5F5F5"
-        android:padding="16dp"
+        android:layout_height="200dp"
         android:layout_marginBottom="20dp"
-        android:gravity="start"
-        android:scrollbars="vertical" />
+        android:background="#F5F5F5"
+        android:padding="1dp"
+        android:scrollbars="vertical">
+
+        <TextView
+            android:id="@+id/txtResultado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aquí aparecerá el texto detectado..."
+            android:textSize="14sp"
+            android:padding="16dp"
+            android:gravity="start"
+            android:scrollbars="vertical"
+            android:isScrollContainer="true" />
+
+    </ScrollView>
 
     <!-- Botón para leer en voz alta -->
     <Button
         android:id="@+id/btnLeerVoz"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🔊 Leer en Voz Alta"
+        android:text="Leer en Voz Alta"
         android:textColor="@color/white"
         android:backgroundTint="@color/naranja_primario"
         android:layout_marginBottom="16dp"

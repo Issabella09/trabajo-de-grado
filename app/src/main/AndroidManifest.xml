@@ -20,7 +20,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Asistente"
-        tools:targetApi="31">
+        tools:targetApi="31"
+        android:requestLegacyExternalStorage="true">
 
         <!-- Actividad principal -->
         <activity
@@ -45,6 +46,13 @@
             android:label="Lector de Texto"
             android:exported="false"
             android:theme="@style/Theme.Asistente" />
+
+        <activity
+            android:name=".CameraActivity"
+            android:label="Tomar Foto"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente"
+            android:screenOrientation="portrait" />
 
         <!-- Servicio de lectura de pantalla -->
         <service

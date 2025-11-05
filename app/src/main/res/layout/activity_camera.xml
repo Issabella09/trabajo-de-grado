@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Vista previa de cámara a pantalla completa -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewViewFullscreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Botón de captura (centrado abajo) -->
+    <Button
+        android:id="@+id/btnCapturarFoto"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="40dp"
+        android:text="📸"
+        android:textSize="24sp"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_captura_redondo"
+        android:elevation="8dp" />
+
+    <!-- Botón cancelar (esquina superior izquierda) -->
+    <Button
+        android:id="@+id/btnCancelarFoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="20dp"
+        android:text="✕"
+        android:textSize="20sp"
+        android:textColor="@color/white"
+        android:background="@android:color/transparent"
+        android:padding="16dp" />
+
+</RelativeLayout>
