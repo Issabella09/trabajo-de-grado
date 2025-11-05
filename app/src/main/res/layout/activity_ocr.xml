@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lector de Texto (OCR)"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@color/naranja_primario"
+        android:layout_gravity="center"
+        android:layout_marginBottom="30dp" />
+
+    <!-- Botones de acción -->
+    <Button
+        android:id="@+id/btnTomarFoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📸 Tomar Foto con Cámara"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_primario"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnElegirGaleria"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🖼️ Elegir de Galería"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_oscuro"
+        android:layout_marginBottom="30dp"
+        android:textSize="16sp" />
+
+    <!-- Área para mostrar imagen o texto detectado -->
+    <!-- Vista previa de la cámara - REEMPLAZA EL TextView -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/txtInstrucciones"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Toma una foto o elige una imagen de la galería para detectar texto"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="@color/naranja_claro"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:id="@+id/txtResultado"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:text="Aquí aparecerá el texto detectado..."
+        android:textSize="14sp"
+        android:background="#F5F5F5"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="start"
+        android:scrollbars="vertical" />
+
+    <!-- Botón para leer en voz alta -->
+    <Button
+        android:id="@+id/btnLeerVoz"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔊 Leer en Voz Alta"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_primario"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp" />
+
+    <!-- Botón para volver -->
+    <Button
+        android:id="@+id/btnVolver"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Volver al Inicio"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_oscuro"
+        android:textSize="16sp" />
+
+</LinearLayout>
