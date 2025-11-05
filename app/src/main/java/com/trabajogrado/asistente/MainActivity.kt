@@ -14,14 +14,32 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
-
         val btnActivarServicio: Button = findViewById(R.id.btnActivarServicio)
 
         btnActivarServicio.setOnClickListener {
             // Abrir configuración de accesibilidad directamente
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             startActivity(intent)
+        }
+        // BOTÓN NUEVO OCR - AGREGA ESTAS LÍNEAS
+        val btnAbrirOCR: Button = findViewById(R.id.btnAbrirOCR)
+        btnAbrirOCR.setOnClickListener {
+            abrirActividadOCR()
+        }
+    }
+
+    private fun abrirActividadOCR() {
+        try {
+            val intent = Intent(this, OCRActivity::class.java)
+            startActivity(intent)
+            Log.d("MainActivity", "Abriendo actividad OCR")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error al abrir OCR: ${e.message}")
+            android.widget.Toast.makeText(
+                this,
+                "Error al abrir lector de texto",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

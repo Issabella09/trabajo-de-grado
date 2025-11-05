@@ -40,6 +40,16 @@
         android:insetBottom="0dp"
         style="@style/Widget.Material3.Button"
         />
+    <!-- Botón para abrir OCR - AGREGA ESTAS LÍNEAS -->
+    <Button
+        android:id="@+id/btnAbrirOCR"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔤 Lector de Texto (OCR)"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_oscuro"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp" />
 
     <TextView
         android:layout_width="match_parent"

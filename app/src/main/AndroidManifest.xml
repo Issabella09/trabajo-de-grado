@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Para que Google Play sepa que la app necesita cámara -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -27,6 +36,13 @@
         <activity
             android:name=".ControlActivity"
             android:label="Control del Asistente"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente" />
+
+        <!-- ACTIVIDAD NUEVA OCR - AGREGA ESTA LÍNEA -->
+        <activity
+            android:name=".OCRActivity"
+            android:label="Lector de Texto"
             android:exported="false"
             android:theme="@style/Theme.Asistente" />
 
