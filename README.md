@@ -1,4 +1,4 @@
-# 👁️ Asistente Virtual Inclusivo
+# 👁️ Asistente Virtual Inclusivo (EVA)
 
 Este proyecto corresponde a mi **trabajo de grado en Ingeniería de Sistemas**.  
 El objetivo es desarrollar un **asistente virtual accesible para personas con discapacidad visual**, utilizando **Kotlin** como lenguaje principal.
