@@ -40,7 +40,7 @@
             android:exported="false"
             android:theme="@style/Theme.Asistente" />
 
-        <!-- ACTIVIDAD NUEVA OCR - AGREGA ESTA LÍNEA -->
+        <!-- ACTIVIDAD NUEVA OCR -->
         <activity
             android:name=".OCRActivity"
             android:label="Lector de Texto"
@@ -53,6 +53,12 @@
             android:exported="false"
             android:theme="@style/Theme.Asistente"
             android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".NotificacionesActivity"
+            android:label="Configurar Notificaciones"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente" />
 
         <!-- Servicio de lectura de pantalla -->
         <service
