@@ -40,21 +40,45 @@
         android:insetBottom="0dp"
         style="@style/Widget.Material3.Button"
         />
-    <!-- Botón para abrir OCR - AGREGA ESTAS LÍNEAS -->
+
+    <Button
+        android:id="@+id/btnIrAControl"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/naranja_primario"
+        android:enabled="false"
+        android:padding="16dp"
+        android:text="Abrir Panel de Control"
+        android:textColor="@color/white"
+        android:textSize="16sp" />
+
+    <!-- Botón para abrir OCR -->
     <Button
         android:id="@+id/btnAbrirOCR"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Lector de Texto"
         android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_oscuro"
+        android:backgroundTint="@color/naranja_primario"
         android:layout_marginBottom="16dp"
         android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnNotificaciones"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lectura de Notificaciones"
+        android:textSize="16sp"
+        android:layout_margin="8dp"
+        android:backgroundTint="@color/naranja_primario"
+        android:textColor="@color/white" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="1. Toca el botón de arriba\n2. Busca 'Tu Asistente Favorito'\n3. Activa el interruptor\n👇 Después de activar en ajustes:\n• Vuelve a esta aplicación\n• Podrás encender/apagar la lectura\n• Controlarás cuándo funciona"
+        android:text="1. Toca el botón de arriba\n2. Busca 'EVA'\n3. Activa el interruptor\n👇 Después de activar en ajustes:\n• Vuelve a esta aplicación\n• Podrás encender/apagar la lectura\n• Controlarás cuándo funciona"
         android:textSize="14sp"
         android:lineSpacingExtra="8dp" />
 

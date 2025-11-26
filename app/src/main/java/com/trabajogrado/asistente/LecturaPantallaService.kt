@@ -15,6 +15,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private val TAG = "LecturaPantallaService"
     private var ultimaAppAnunciada: String? = null
     private var lecturaActiva: Boolean = false
+    private var isLecturaNotificacionesActiva = false
+    private val notificacionesLeidas = mutableSetOf<String>()
 
     // Métodos para controlar el servicio desde la app
     fun activarLectura() {
@@ -28,6 +30,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         Companion.lecturaActiva = false  // ← Usar la del companion
         textToSpeech.stop()
         hablar("Lectura de pantalla desactivada")
+    }
+
+    fun actualizarConfiguracionNotificaciones() {
+        cargarConfiguracionNotificaciones()
+        Log.d(TAG, "🔄 Configuración de notificaciones actualizada: $isLecturaNotificacionesActiva")
     }
 
     fun estaActivo(): Boolean {
@@ -74,6 +81,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         fun desactivarLecturaDesdeExterno() {
             instance?.desactivarLectura()
         }
+
+        fun actualizarConfiguracionNotificaciones() {
+            instance?.actualizarConfiguracionNotificaciones()
+            Log.d("LecturaService", "🔄 Solicitada actualización de configuración de notificaciones")
+        }
     }
 
     override fun onServiceConnected() {
@@ -85,6 +97,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         // Inicializar TextToSpeech pero NO hablar automáticamente
         textToSpeech = TextToSpeech(this, this)
+
+        cargarConfiguracionNotificaciones()
 
         // IMPORTANTE: No hablar ni activar funcionalidad aquí
         // El usuario controlará cuándo activar desde la app
@@ -117,6 +131,94 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             this.serviceInfo = info
             Log.d(TAG, "Servicio configurado para leer todas las aplicaciones")
 
+    }
+
+    private fun cargarConfiguracionNotificaciones() {
+        try {
+            val sharedPref = getSharedPreferences("config_notificaciones", MODE_PRIVATE)
+            isLecturaNotificacionesActiva = sharedPref.getBoolean("lectura_automatica", false)
+            Log.d(TAG, "📢 Configuración notificaciones cargada: $isLecturaNotificacionesActiva")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cargando configuración notificaciones: ${e.message}")
+        }
+    }
+
+    private fun procesarNotificacion(event: AccessibilityEvent) {
+        if (!isLecturaNotificacionesActiva) return
+
+        try {
+            val textoNotificacion = obtenerTextoNotificacion(event)
+            if (textoNotificacion.isNotBlank() && esNotificacionNueva(textoNotificacion)) {
+
+                // Verificar si es de una app permitida
+                val nombreApp = obtenerNombreApp(event.packageName.toString())
+                if (esAppPermitida(nombreApp)) {
+
+                    // Leer la notificación
+                    val mensaje = "Notificación de $nombreApp: $textoNotificacion"
+                    Log.d(TAG, "🔔 Leyendo notificación: $mensaje")
+                    leerEnVozAlta(mensaje)
+
+                    // Marcar como leída
+                    notificacionesLeidas.add(textoNotificacion.hashCode().toString())
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error procesando notificación: ${e.message}")
+        }
+    }
+
+    private fun obtenerTextoNotificacion(event: AccessibilityEvent): String {
+        return if (event.text.isNotEmpty()) {
+            event.text.joinToString(" ")
+        } else {
+            "Notificación sin texto"
+        }
+    }
+
+    private fun esNotificacionNueva(texto: String): Boolean {
+        val hash = texto.hashCode().toString()
+        return !notificacionesLeidas.contains(hash)
+    }
+
+    private fun obtenerNombreApp(packageName: String): String {
+        val mapaPaquetes = mapOf(
+            "com.whatsapp" to "WhatsApp",
+            "com.whatsapp.w4b" to "WhatsApp Business",
+            "com.android.messaging" to "Mensajes",
+            "com.google.android.gm" to "Gmail",
+            "com.facebook.katana" to "Facebook",
+            "com.instagram.android" to "Instagram",
+            "org.telegram.messenger" to "Telegram",
+            "com.twitter.android" to "Twitter",
+            "com.discord" to "Discord",
+            "com.skype.raider" to "Skype",
+            "com.viber.voip" to "Viber",
+            "com.snapchat.android" to "Snapchat",
+            "com.microsoft.teams" to "Microsoft Teams",
+            "com.signal" to "Signal",
+            "com.google.android.talk" to "Google Meet",
+            "com.android.email" to "Email",
+            "com.samsung.android.messaging" to "Mensajes Samsung"
+        )
+
+        return mapaPaquetes[packageName] ?: "Aplicación"
+    }
+
+    private fun esAppPermitida(nombreApp: String): Boolean {
+        try {
+            val sharedPref = getSharedPreferences("apps_permitidas", MODE_PRIVATE)
+            return sharedPref.getBoolean(nombreApp, true) // Por defecto todas permitidas
+        } catch (e: Exception) {
+            return true
+        }
+    }
+
+    private fun leerEnVozAlta(texto: String) {
+        if (textToSpeech.isSpeaking) {
+            textToSpeech.stop()
+        }
+        textToSpeech.speak(texto, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     override fun onInit(status: Int) {
@@ -241,24 +343,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     private fun leerNotificacionMensaje(event: AccessibilityEvent) {
-        try {
-            val texto = event.text?.joinToString(" ") ?: ""
-            if (texto.isNotBlank()) {
-                // Filtrar solo notificaciones que parezcan mensajes
-                if (texto.contains("mensaje", true) ||
-                    texto.contains("message", true) ||
-                    texto.contains("chat", true) ||
-                    texto.contains("WhatsApp", true) ||
-                    texto.contains("Telegram", true) ||
-                    texto.contains("Instagram", true) ||
-                    texto.contains("Facebook", true)) {
-
-                    hablar("Nueva notificación: $texto")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error leyendo notificación: ${e.message}")
-        }
+        procesarNotificacion(event)
     }
 
     // AGREGAR ESTOS NUEVOS MÉTODOS para nivel 2:

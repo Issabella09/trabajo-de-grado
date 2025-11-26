@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lectura de Notificaciones"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@color/naranja_primario"
+        android:layout_gravity="center"
+        android:layout_marginBottom="30dp" />
+
+    <!-- Estado del servicio -->
+    <TextView
+        android:id="@+id/txt_estado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Estado del servicio..."
+        android:textSize="16sp"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="@color/naranja_claro"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Switch lectura automática -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <Switch
+            android:id="@+id/switch_lectura_auto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Lectura automática de notificaciones"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <!-- Botón configurar accesibilidad -->
+    <Button
+        android:id="@+id/btn_configurar_accesibilidad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Configurar Servicio de Accesibilidad"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_primario"
+        android:layout_marginBottom="30dp"
+        android:textSize="16sp" />
+
+    <!-- Título apps -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Aplicaciones para leer:"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Lista de aplicaciones -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_apps"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Botón volver -->
+    <Button
+        android:id="@+id/btn_volver"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Volver al Inicio"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/naranja_oscuro"
+        android:textSize="16sp" />
+
+</LinearLayout>

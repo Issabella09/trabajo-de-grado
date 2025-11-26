@@ -7,24 +7,58 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import android.content.ComponentName
 import android.util.Log
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
+
+    private var redireccionAutomatica = true
+    private lateinit var btnActivarServicio: Button
+    private lateinit var btnIrAControl: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val btnActivarServicio: Button = findViewById(R.id.btnActivarServicio)
+        btnActivarServicio = findViewById(R.id.btnActivarServicio)
+        btnIrAControl = findViewById(R.id.btnIrAControl)
 
         btnActivarServicio.setOnClickListener {
             // Abrir configuración de accesibilidad directamente
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             startActivity(intent)
         }
+
+        btnIrAControl.setOnClickListener {
+            val intent = Intent(this, ControlActivity::class.java)
+            startActivity(intent)
+        }
+
         // BOTÓN NUEVO OCR - AGREGA ESTAS LÍNEAS
         val btnAbrirOCR: Button = findViewById(R.id.btnAbrirOCR)
         btnAbrirOCR.setOnClickListener {
             abrirActividadOCR()
+        }
+
+        val btnNotificaciones = findViewById<Button>(R.id.btnNotificaciones)
+        if (btnNotificaciones == null) {
+            Log.e("MainActivity", "❌❌❌ ERROR: btnNotificaciones NO EXISTE")
+            Toast.makeText(this, "ERROR: Botón no encontrado", Toast.LENGTH_LONG).show()
+            return
+        } else {
+            Log.d("MainActivity", "✅ Botón notificaciones encontrado")
+        }
+
+        btnNotificaciones.setOnClickListener {
+            Log.d("MainActivity", "🎯🎯🎯 BOTÓN PRESIONADO - INICIANDO ACTIVIDAD")
+
+            try {
+                val intent = Intent(this, NotificacionesActivity::class.java)
+                startActivity(intent)
+                Log.d("MainActivity", "✅✅✅ ACTIVIDAD INICIADA")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "❌❌❌ ERROR CRÍTICO: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
@@ -45,33 +79,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        // Verificar si el servicio de accesibilidad ya está activo
-        if (esServicioAccesibilidadActivo()) {
-            // Si ya tiene permisos, redirigir directamente a ControlActivity
-            val intent = Intent(this, ControlActivity::class.java)
-            startActivity(intent)
-            finish() // Cerrar esta actividad para que no quede en el stack
-        }
+        actualizarEstadoBotonControl()
     }
-    private fun esServicioAccesibilidadActivo(): Boolean {
-        try {
-            val service = ComponentName(this, LecturaPantallaService::class.java)
-            val enabled = Settings.Secure.getInt(
-                contentResolver,
-                Settings.Secure.ACCESSIBILITY_ENABLED
-            )
 
-            if (enabled == 1) {
-                val services = Settings.Secure.getString(
-                    contentResolver,
-                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-                )
-                return services?.contains(service.flattenToString()) == true
-            }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error verificando servicio: ${e.message}")
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val serviceId = "$packageName/${LecturaPantallaService::class.java.canonicalName}" // ← CORREGIDO
+        val settings = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+        return settings?.contains(serviceId) == true
+    }
+
+    private fun actualizarEstadoBotonControl() {
+        if (isAccessibilityServiceEnabled()) {
+            // Si el servicio está activado, habilita el botón de control
+            btnIrAControl.isEnabled = true
+            btnIrAControl.alpha = 1.0f // Restaura la opacidad completa
+        } else {
+            // Si no, lo deshabilita y lo hace semitransparente
+            btnIrAControl.isEnabled = false
+            btnIrAControl.alpha = 0.5f // Efecto visual para que se vea deshabilitado
         }
-        return false
     }
 }
