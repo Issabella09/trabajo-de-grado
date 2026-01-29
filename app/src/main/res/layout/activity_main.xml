@@ -1,85 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center"
-    tools:context=".MainActivity">
+    android:fillViewport="true"
+    android:background="#FFF7F2">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Asistente EVA"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
-
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Para activar el servicio de lectura de pantalla primero debes dar permisos de accesibilidad:"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp" />
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">
 
-    <Button
-        android:id="@+id/btnActivarServicio"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Abrir Configuración de Accesibilidad"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp"
-        android:padding="16dp"
+        <!-- Encabezado -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EVA"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:textColor="#F97316"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp" />
 
-        android:elevation="4dp"
-        android:stateListAnimator="@null"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        style="@style/Widget.Material3.Button"
-        />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Asistente virtual accesible"
+            android:textSize="15sp"
+            android:textColor="#6B7280"
+            android:layout_marginBottom="24dp" />
 
-    <Button
-        android:id="@+id/btnIrAControl"
-        style="@style/Widget.Material3.Button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/naranja_primario"
-        android:enabled="false"
-        android:padding="16dp"
-        android:text="Abrir Panel de Control"
-        android:textColor="@color/white"
-        android:textSize="16sp" />
+        <!-- Card principal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="20dp"
+            android:elevation="6dp"
+            android:layout_marginBottom="24dp">
 
-    <!-- Botón para abrir OCR -->
-    <Button
-        android:id="@+id/btnAbrirOCR"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Lector de Texto"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Estado del servicio"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1F2933"
+                android:layout_marginBottom="8dp" />
 
-    <Button
-        android:id="@+id/btnNotificaciones"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Lectura de Notificaciones"
-        android:textSize="16sp"
-        android:layout_margin="8dp"
-        android:backgroundTint="@color/naranja_primario"
-        android:textColor="@color/white" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="El servicio de accesibilidad de EVA no está activado."
+                android:textSize="15sp"
+                android:textColor="#374151"
+                android:layout_marginBottom="16dp" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="1. Toca el botón de arriba\n2. Busca 'EVA'\n3. Activa el interruptor\n👇 Después de activar en ajustes:\n• Vuelve a esta aplicación\n• Podrás encender/apagar la lectura\n• Controlarás cuándo funciona"
-        android:textSize="14sp"
-        android:lineSpacingExtra="8dp" />
+            <Button
+                android:id="@+id/btnActivarServicio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Activar accesibilidad"
+                android:textSize="17sp"
+                android:padding="16dp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#F97316" />
+        </LinearLayout>
 
-</LinearLayout>
+        <!-- Acciones -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Funciones"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#1F2933"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnIrAControl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Panel de control"
+            android:textSize="16sp"
+            android:padding="14dp"
+            android:enabled="false"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FB923C"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnAbrirOCR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lector de texto"
+            android:textSize="16sp"
+            android:padding="14dp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FB923C"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnNotificaciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lectura de notificaciones"
+            android:textSize="16sp"
+            android:padding="14dp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FB923C"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Ayuda -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ayuda rápida:\n\n1. Pulsa “Activar accesibilidad”\n2. Busca “EVA”\n3. Activa el interruptor"
+            android:textSize="14sp"
+            android:textColor="#6B7280"
+            android:lineSpacingExtra="6dp" />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -17,6 +17,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private var lecturaActiva: Boolean = false
     private var isLecturaNotificacionesActiva = false
     private val notificacionesLeidas = mutableSetOf<String>()
+    private var ultimoLogDesactivado: Long = 0
 
     // Métodos para controlar el servicio desde la app
     fun activarLectura() {
@@ -27,14 +28,31 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     fun desactivarLectura() {
         Log.d(TAG, "🎯 DESACTIVANDO lectura de pantalla por comando del usuario")
-        Companion.lecturaActiva = false  // ← Usar la del companion
+        Companion.lecturaActiva = false
+
+        // Detener TODAS las lecturas inmediatamente
         textToSpeech.stop()
-        hablar("Lectura de pantalla desactivada")
+        textToSpeech.shutdown()
+
+        // Re-inicializar TextToSpeech (pero silenciado)
+        textToSpeech = TextToSpeech(this, this)
+
+        Log.d(TAG, "🔕 Servicio COMPLETAMENTE silenciado")
     }
 
     fun actualizarConfiguracionNotificaciones() {
+        Log.d(TAG, "🔄 SOLICITUD DE ACTUALIZACIÓN DE CONFIGURACIÓN")
+
+        // Recargar configuración INMEDIATAMENTE
         cargarConfiguracionNotificaciones()
-        Log.d(TAG, "🔄 Configuración de notificaciones actualizada: $isLecturaNotificacionesActiva")
+
+        // Detener cualquier lectura en curso si se desactivó
+        if (!isLecturaNotificacionesActiva && textToSpeech.isSpeaking) {
+            Log.d(TAG, "⏹️ Deteniendo lectura en curso porque se desactivaron notificaciones")
+            textToSpeech.stop()
+        }
+
+        Log.d(TAG, "✅ Configuración actualizada. Notificaciones activas: $isLecturaNotificacionesActiva")
     }
 
     fun estaActivo(): Boolean {
@@ -138,33 +156,71 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             val sharedPref = getSharedPreferences("config_notificaciones", MODE_PRIVATE)
             isLecturaNotificacionesActiva = sharedPref.getBoolean("lectura_automatica", false)
             Log.d(TAG, "📢 Configuración notificaciones cargada: $isLecturaNotificacionesActiva")
+
+            // DEBUG EXTRA: Mostrar todas las preferencias
+            val allPrefs = sharedPref.all
+            Log.d(TAG, "📋 Todas las preferencias de notificaciones: $allPrefs")
+
         } catch (e: Exception) {
             Log.e(TAG, "Error cargando configuración notificaciones: ${e.message}")
+            isLecturaNotificacionesActiva = false // Por defecto desactivado
         }
     }
 
     private fun procesarNotificacion(event: AccessibilityEvent) {
-        if (!isLecturaNotificacionesActiva) return
+        Log.d(TAG, "🔔 EVENTO DE NOTIFICACIÓN DETECTADO")
+
+        // 1. Verificar si el servicio global está activado
+        if (!Companion.lecturaActiva) {
+            Log.d(TAG, "🔇 Servicio global DESACTIVADO - Ignorando notificación")
+            return
+        }
+
+        // 2. Verificar si las notificaciones están activadas (NUEVO CHECK CRÍTICO)
+        if (!isLecturaNotificacionesActiva) {
+            Log.d(TAG, "🔕 Switch de notificaciones DESACTIVADO - Ignorando notificación")
+            return // ← ESTA ES LA LÍNEA CLAVE
+        }
 
         try {
             val textoNotificacion = obtenerTextoNotificacion(event)
-            if (textoNotificacion.isNotBlank() && esNotificacionNueva(textoNotificacion)) {
+            Log.d(TAG, "📝 Texto de notificación: '$textoNotificacion'")
 
-                // Verificar si es de una app permitida
-                val nombreApp = obtenerNombreApp(event.packageName.toString())
-                if (esAppPermitida(nombreApp)) {
+            if (textoNotificacion.isNotBlank()) {
+                Log.d(TAG, "✅ Notificación tiene texto")
 
-                    // Leer la notificación
-                    val mensaje = "Notificación de $nombreApp: $textoNotificacion"
-                    Log.d(TAG, "🔔 Leyendo notificación: $mensaje")
-                    leerEnVozAlta(mensaje)
+                if (esNotificacionNueva(textoNotificacion)) {
+                    Log.d(TAG, "🆕 Notificación NUEVA (no repetida)")
 
-                    // Marcar como leída
-                    notificacionesLeidas.add(textoNotificacion.hashCode().toString())
+                    // Verificar si es de una app permitida
+                    val nombreApp = obtenerNombreApp(event.packageName.toString())
+                    Log.d(TAG, "📱 App de origen: ${event.packageName} -> $nombreApp")
+
+                    if (esAppPermitida(nombreApp)) {
+                        Log.d(TAG, "✅ App PERMITIDA: $nombreApp")
+
+                        // Leer la notificación
+                        val mensaje = "Notificación de $nombreApp: $textoNotificacion"
+                        Log.d(TAG, "🎤 Leyendo: $mensaje")
+                        leerEnVozAlta(mensaje)
+
+                        // Marcar como leída
+                        notificacionesLeidas.add(textoNotificacion.hashCode().toString())
+                        Log.d(TAG, "📌 Notificación marcada como leída")
+
+                    } else {
+                        Log.d(TAG, "❌ App NO permitida: $nombreApp")
+                    }
+                } else {
+                    Log.d(TAG, "🔁 Notificación REPETIDA, ignorando")
                 }
+            } else {
+                Log.d(TAG, "❌ Notificación SIN TEXTO")
             }
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error procesando notificación: ${e.message}")
+            Log.e(TAG, "❌ ERROR procesando notificación: ${e.message}")
+            e.printStackTrace()
         }
     }
 
@@ -243,12 +299,20 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!Companion.lecturaActiva) return  // ← CAMBIA: lecturaActiva → Companion.lecturaActiva
+
+        if (!Companion.lecturaActiva || !isLecturaNotificacionesActiva) {
+            // Log solo la primera vez para no spammear
+            if (System.currentTimeMillis() - ultimoLogDesactivado > 5000) {
+                Log.d(TAG, "🔇 Servicio DESACTIVADO - Ignorando evento")
+                ultimoLogDesactivado = System.currentTimeMillis()
+            }
+            return
+        }
 
         event?.let {
-            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName} - Nivel: ${Companion.nivelLectura}")  // ← CAMBIA: nivelLectura → Companion.nivelLectura
+            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName} - Nivel: ${Companion.nivelLectura}")
 
-            when (Companion.nivelLectura) {  // ← CAMBIA: nivelLectura → Companion.nivelLectura
+            when (Companion.nivelLectura) {
                 1 -> procesarEventoNivel1(event)
                 2 -> procesarEventoNivel2(event)
                 else -> procesarEventoNivel1(event)

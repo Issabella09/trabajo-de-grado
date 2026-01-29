@@ -24,6 +24,7 @@ class ControlActivity : AppCompatActivity() {
     private lateinit var btnVolver: Button
     private val PREFS_NAME = "PrefsAsistente"
     private val KEY_NIVEL_LECTURA = "nivel_lectura"
+    private val KEY_SWITCH_ACTIVADO = "switch_activado"
     private val TAG = "ControlActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,9 +32,14 @@ class ControlActivity : AppCompatActivity() {
         setContentView(R.layout.activity_control)
 
         inicializarVistas()
-        cargarPreferencias()  // ← AGREGA ESTO
+        cargarPreferencias()
         configurarSwitch()
         verificarEstadoServicio()
+
+        // ← AGREGAR ESTO: Activar automáticamente si el switch estaba activado
+        if (switchLectura.isChecked) {
+            activarLecturaPantalla()
+        }
     }
 
     private fun inicializarVistas() {
@@ -52,29 +58,49 @@ class ControlActivity : AppCompatActivity() {
 
         radioGroupNiveles.setOnCheckedChangeListener { _, checkedId ->
             guardarPreferenciaNivel(checkedId)
+            // ← AGREGAR ESTO: Actualizar servicio inmediatamente al cambiar nivel
+            if (switchLectura.isChecked) {
+                actualizarServicioConNivel()
+            }
         }
     }
 
     private fun cargarPreferencias() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+        // Cargar nivel de lectura (por defecto nivel 1)
         val nivelSeleccionado = prefs.getInt(KEY_NIVEL_LECTURA, R.id.radioNivel1)
         radioGroupNiveles.check(nivelSeleccionado)
+
+        // Cargar estado del switch
+        val switchActivado = prefs.getBoolean(KEY_SWITCH_ACTIVADO, false)
+        switchLectura.isChecked = switchActivado
+
+        Log.d(TAG, "Preferencias cargadas - Switch: $switchActivado, Nivel: $nivelSeleccionado")
     }
 
     private fun guardarPreferenciaNivel(checkedId: Int) {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putInt(KEY_NIVEL_LECTURA, checkedId).apply()
+        Log.d(TAG, "Nivel guardado: $checkedId")
+    }
 
-        if (switchLectura.isChecked) {
-            actualizarServicioConNivel()
-        }
+    private fun guardarEstadoSwitch(activado: Boolean) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_SWITCH_ACTIVADO, activado).apply()
+        Log.d(TAG, "Estado switch guardado: $activado")
     }
 
     private fun configurarSwitch() {
         switchLectura.setOnCheckedChangeListener { _, isChecked ->
-            actualizarVisibilidadSelector()  // ← AGREGA ESTO
+            actualizarVisibilidadSelector()
+            guardarEstadoSwitch(isChecked)
 
             if (isChecked) {
+                // ← AGREGAR ESTO: Asegurar que hay un nivel seleccionado
+                if (radioGroupNiveles.checkedRadioButtonId == -1) {
+                    radioGroupNiveles.check(R.id.radioNivel1)
+                }
                 activarLecturaPantalla()
             } else {
                 desactivarLecturaPantalla()
@@ -92,6 +118,13 @@ class ControlActivity : AppCompatActivity() {
 
     private fun activarLecturaPantalla() {
         Log.d(TAG, "Usuario activó lectura de pantalla")
+
+        // ← AGREGAR ESTO: Asegurar nivel por defecto si no hay selección
+        if (radioGroupNiveles.checkedRadioButtonId == -1) {
+            radioGroupNiveles.check(R.id.radioNivel1)
+            guardarPreferenciaNivel(R.id.radioNivel1)
+        }
+
         txtEstado.text = "Estado: Lectura ACTIVADA - ${obtenerTextoNivelSeleccionado()}"
 
         try {
@@ -119,6 +152,9 @@ class ControlActivity : AppCompatActivity() {
 
         try {
             LecturaPantallaService.desactivarLecturaDesdeExterno()
+
+            detenerServicioAccesibilidad()
+
             android.widget.Toast.makeText(
                 this,
                 "Lectura de pantalla desactivada",
@@ -126,6 +162,18 @@ class ControlActivity : AppCompatActivity() {
             ).show()
         } catch (e: Exception) {
             Log.e(TAG, "Error desactivando lectura: ${e.message}")
+        }
+    }
+
+    private fun detenerServicioAccesibilidad() {
+        try {
+            // Crear intent para detener el servicio
+            val intent = Intent(this, LecturaPantallaService::class.java)
+            stopService(intent)
+
+            Log.d(TAG, "🛑 Servicio de accesibilidad detenido")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deteniendo servicio: ${e.message}")
         }
     }
 
@@ -140,6 +188,8 @@ class ControlActivity : AppCompatActivity() {
                 "Nivel actualizado: ${obtenerTextoNivelSeleccionado()}",
                 android.widget.Toast.LENGTH_SHORT
             ).show()
+
+            guardarPreferenciaNivel(radioGroupNiveles.checkedRadioButtonId)
         }
     }
 
@@ -147,7 +197,7 @@ class ControlActivity : AppCompatActivity() {
         return when (radioGroupNiveles.checkedRadioButtonId) {
             R.id.radioNivel1 -> 1
             R.id.radioNivel2 -> 2
-            else -> 1
+            else -> 1 // ← POR DEFECTO NIVEL 1
         }
     }
 
@@ -172,6 +222,16 @@ class ControlActivity : AppCompatActivity() {
                 "Primero activa los permisos en Ajustes del Sistema",
                 android.widget.Toast.LENGTH_LONG
             ).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Si el usuario cierra la app con el switch activado, mantenerlo
+        // Si lo cierra con el switch desactivado
+        if (!switchLectura.isChecked) {
+            desactivarLecturaPantalla()
         }
     }
 

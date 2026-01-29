@@ -11,3 +11,6 @@ vcs.xml
 build/
 .gradle/
 app/build/
+
+echo ".kotlin/" >> .gitignore
+echo "*.log" >> .gitignore

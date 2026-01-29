@@ -14,7 +14,15 @@ import android.content.ComponentName
 import android.widget.Toast
 import android.util.Log
 import android.content.pm.PackageManager
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityEvent
+import kotlin.Int
+import kotlin.String
+
 class NotificacionesActivity : AppCompatActivity() {
+    private val TAG = "NotificacionesActivity"
 
     private lateinit var switchLecturaAuto: Switch
     private lateinit var btnConfigurarAccesibilidad: Button
@@ -24,28 +32,20 @@ class NotificacionesActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("Notificaciones", "🚀 onCreate INICIADO")
         setContentView(R.layout.activity_notificaciones)
-        Log.d("Notificaciones", "✅ setContentView completado")
 
         try {
             inicializarVistas()
-            Log.d("Notificaciones", "✅ Vistas inicializadas")
-
+            verificarPermisoNotificaciones()
             configurarListeners()
-            Log.d("Notificaciones", "✅ Listeners configurados")
-
             cargarConfiguracion()
-            Log.d("Notificaciones", "✅ Configuración cargada")
-
             cargarListaApps()
-            Log.d("Notificaciones", "✅ Lista de apps cargada")
 
         } catch (e: Exception) {
-            Log.e("Notificaciones", "❌ ERROR en onCreate: ${e.message}")
             e.printStackTrace()
         }
     }
+
 
     private fun inicializarVistas() {
         Log.d("Notificaciones", "🔍 Buscando vistas...")
@@ -75,6 +75,12 @@ class NotificacionesActivity : AppCompatActivity() {
             guardarConfiguracionLectura(isChecked)
             actualizarEstadoServicio()
             notificarServicioConfiguracionCambiada()
+
+            val mensaje = if (isChecked) "✅ Notificaciones ACTIVADAS" else "🔕 Notificaciones DESACTIVADAS"
+            Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show()
+
+            // Log para debugging
+            Log.d(TAG, "📤 Configuración guardada y servicio notificado: lectura_automatica = $isChecked")
         }
 
         btnConfigurarAccesibilidad.setOnClickListener {
@@ -145,6 +151,48 @@ class NotificacionesActivity : AppCompatActivity() {
             Toast.makeText(this, "Error cargando apps: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
+
+    private fun verificarPermisoNotificaciones() {
+        try {
+            val enabledNotificationListeners = Settings.Secure.getString(
+                contentResolver,
+                "enabled_notification_listeners"
+            )
+
+            val service = ComponentName(this, LecturaPantallaService::class.java)
+            val hasPermission = enabledNotificationListeners?.contains(service.flattenToString()) ?: false
+
+            if (!hasPermission) {
+                // Verificar si YA hemos mostrado el mensaje en esta sesión
+                val prefs = getSharedPreferences("permisos_notificaciones", MODE_PRIVATE)
+                val yaMostrado = prefs.getBoolean("mensaje_mostrado", false)
+
+                if (!yaMostrado) {
+                    // Mostrar mensaje solo la primera vez
+                    Toast.makeText(this,
+                        "Para leer notificaciones, activa el permiso en ajustes",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // Marcar que ya mostramos el mensaje
+                    prefs.edit().putBoolean("mensaje_mostrado", true).apply()
+
+                    // Opcional: abrir ajustes automáticamente solo la primera vez
+                    val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                    startActivity(intent)
+                } else {
+                    // Ya mostramos el mensaje antes, solo log
+                    Log.d(TAG, "✅ Permiso de notificaciones ya solicitado anteriormente")
+                }
+            } else {
+                Log.d(TAG, "✅ Permiso de notificaciones YA ACTIVADO")
+                // No mostrar Toast para no molestar
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error verificando permiso: ${e.message}")
+        }
+    }
+
 
     private fun obtenerAppsInstaladas(): List<AppInfo> {
         val apps = mutableListOf<AppInfo>()

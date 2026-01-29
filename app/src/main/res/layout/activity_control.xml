@@ -1,90 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center"
-    android:background="@color/white">
-
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
-        android:text="Control del Asistente"
-        android:textColor="@color/naranja_primario"
-        android:textSize="28sp"
-        android:textStyle="bold" />
-
-
-    <TextView
-        android:id="@+id/txtEstado"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Estado: Verificando..."
-        android:textSize="18sp"
-        android:textColor="@color/texto_oscuro"
-        android:gravity="center"
-        android:layout_marginBottom="30dp"
-        android:padding="16dp"
-        android:background="@color/naranja_claro" />
+    android:fillViewport="true"
+    android:background="#FFF7F2">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-        <Switch
-            android:id="@+id/switchLectura"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">
+
+        <!-- Título -->
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lectura de Pantalla"
-            android:textSize="20sp"
-            android:textColor="@color/texto_oscuro"
-            android:layout_marginBottom="40dp"
-            android:checked="false" />
+            android:text="Control del asistente"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#F97316"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Card de estado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="20dp"
+            android:elevation="6dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Estado actual"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1F2933"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/txtEstado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Verificando estado del servicio..."
+                android:textSize="16sp"
+                android:textColor="#374151"
+                android:layout_marginBottom="16dp" />
+
+            <Switch
+                android:id="@+id/switchLectura"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lectura de pantalla"
+                android:textSize="18sp"
+                android:textColor="#1F2933"
+                android:checked="false" />
+        </LinearLayout>
+
+        <!-- Card de niveles -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="20dp"
+            android:elevation="6dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nivel de lectura"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1F2933"
+                android:layout_marginBottom="12dp" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupNiveles"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <RadioButton
+                    android:id="@+id/radioNivel1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nivel 1: Solo mensajes (WhatsApp, Telegram)"
+                    android:textSize="16sp"
+                    android:checked="true"
+                    android:textColor="#374151"
+                    android:layout_marginBottom="8dp" />
+
+                <RadioButton
+                    android:id="@+id/radioNivel2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nivel 2: Todo el contenido"
+                    android:textSize="16sp"
+                    android:textColor="#374151" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- Botón volver -->
+        <Button
+            android:id="@+id/btnVolver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Volver al inicio"
+            android:textSize="16sp"
+            android:padding="16dp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#F97316" />
 
     </LinearLayout>
 
-    <!-- Selector de Niveles (visible solo cuando el switch está activado) -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nivel de lectura:"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupNiveles"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="24dp">
-
-        <RadioButton
-            android:id="@+id/radioNivel1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Nivel 1: Solo mensajes (WhatsApp, Telegram, etc.)"
-            android:checked="true" />
-
-        <RadioButton
-            android:id="@+id/radioNivel2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Nivel 2: Todo el contenido" />
-
-    </RadioGroup>
-
-    <Button
-        android:id="@+id/btnVolver"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Volver al Inicio"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:textSize="16sp" />
-
-</LinearLayout>
+</ScrollView>
