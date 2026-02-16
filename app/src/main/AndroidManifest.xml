@@ -5,6 +5,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <!-- Para que Google Play sepa que la app necesita cámara -->
     <uses-feature
@@ -76,6 +83,23 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <activity
+            android:name=".AsistenteVozActivity"
+            android:label="Asistente de Voz EVA"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente" />
+
+        <service
+            android:name=".AsistenteVozService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <service
+            android:name=".TestService"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 </manifest>

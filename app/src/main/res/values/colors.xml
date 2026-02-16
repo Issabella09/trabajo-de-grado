@@ -1,17 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Paleta anaranjada principal -->
+    <color name="naranja_primario">#FF6B35</color>
+    <color name="naranja_oscuro">#E55C30</color>
+    <color name="naranja_claro">#FF8C61</color>
+    <color name="naranja_suave">#FFE5DC</color>
+
+    <!-- Textos -->
+    <color name="texto_oscuro">#212121</color>
+    <color name="texto_medio">#424242</color>
+    <color name="texto_claro">#757575</color>
+    <color name="texto_gris">#9E9E9E</color>
+
+    <!-- Complementarios -->
+    <color name="blanco">#FFFFFF</color>
+    <color name="gris_claro">#F5F5F5</color>
+    <color name="gris_medio">#9E9E9E</color>
+    <color name="gris_oscuro">#424242</color>
+    <color name="negro">#212121</color>
+
+    <!-- Fondos -->
+    <color name="fondo_claro">#FAFAFA</color>
+    <color name="fondo_card">#FFFFFF</color>
+
+    <!-- Acentos -->
+    <color name="acento_azul">#4A90E2</color>
+    <color name="acento_verde">#4CAF50</color>
+    <color name="acento_rojo">#F44336</color>
+    <color name="acento_amarillo">#FFC107</color>
+
+    <!-- Estados -->
+    <color name="estado_activo">#4CAF50</color>
+    <color name="estado_inactivo">#9E9E9E</color>
+    <color name="estado_error">#F44336</color>
+    <color name="estado_warning">#FF9800</color>
+
+    <!-- Legacy (por compatibilidad) -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
-    <!-- Colores naranjas para accesibilidad -->
-    <color name="naranja_primario">#FFFF9800</color>
-    <color name="naranja_oscuro">#FFF57C00</color>
-    <color name="naranja_claro">#FFFFE0B2</color>
-    <color name="texto_oscuro">#FF212121</color>
-    <color name="fondo_claro">#FFF5F5F5</color>
 </resources>

@@ -20,12 +20,13 @@ import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
+import android.widget.LinearLayout
 
 class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var textToSpeech: TextToSpeech
-    private lateinit var btnTomarFoto: Button
-    private lateinit var btnElegirGaleria: Button
+    private lateinit var btnTomarFoto: LinearLayout
+    private lateinit var btnElegirGaleria: LinearLayout
     private lateinit var btnLeerVoz: Button
     private lateinit var btnVolver: Button
     private lateinit var txtResultado: TextView
@@ -212,8 +213,8 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun inicializarVistas() {
         // Conectar variables con los elementos del layout
-        btnTomarFoto = findViewById(R.id.btnTomarFoto)
-        btnElegirGaleria = findViewById(R.id.btnElegirGaleria)
+        btnTomarFoto = findViewById<LinearLayout>(R.id.btnTomarFoto)
+        btnElegirGaleria = findViewById<LinearLayout>(R.id.btnElegirGaleria)
         btnLeerVoz = findViewById(R.id.btnLeerVoz)
         btnVolver = findViewById(R.id.btnVolver)
         txtResultado = findViewById(R.id.txtResultado)

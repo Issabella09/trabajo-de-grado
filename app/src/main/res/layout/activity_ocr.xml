@@ -1,103 +1,299 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/white">
+    android:background="@drawable/background_gradient"
+    android:fillViewport="true">
 
-    <!-- Título -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lector de Texto"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/naranja_primario"
-        android:layout_gravity="center"
-        android:layout_marginBottom="30dp" />
-
-    <!-- Botones de acción -->
-    <Button
-        android:id="@+id/btnTomarFoto"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tomar Foto con Cámara"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <Button
-        android:id="@+id/btnElegirGaleria"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Elegir de Galería"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_oscuro"
-        android:layout_marginBottom="30dp"
-        android:textSize="16sp" />
-
-    <!-- Área para mostrar imagen o texto detectado -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginBottom="20dp"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/txtInstrucciones"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Toma una foto o elige una imagen de la galería para detectar texto"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="@color/naranja_claro"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Cuadro de texto -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginBottom="20dp"
-        android:background="#F5F5F5"
-        android:padding="1dp"
-        android:scrollbars="vertical">
-
-        <TextView
-            android:id="@+id/txtResultado"
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Aquí aparecerá el texto detectado..."
-            android:textSize="14sp"
-            android:padding="16dp"
-            android:gravity="start"
-            android:scrollbars="vertical"
-            android:isScrollContainer="true" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
 
-    </ScrollView>
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/logo_eva"
+                android:contentDescription="Logo EVA"
+                android:layout_marginBottom="12dp" />
 
-    <!-- Botón para leer en voz alta -->
-    <Button
-        android:id="@+id/btnLeerVoz"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Leer en Voz Alta"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lector de Texto"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario"
+                android:letterSpacing="0.02" />
 
-    <!-- Botón para volver -->
-    <Button
-        android:id="@+id/btnVolver"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Volver al Inicio"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_oscuro"
-        android:textSize="16sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OCR - Reconocimiento de texto"
+                android:textSize="14sp"
+                android:textColor="@color/gris_medio"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
 
-</LinearLayout>
+        <!-- Card de Acciones -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Capturar Imagen"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Botón Tomar Foto -->
+                <LinearLayout
+                    android:id="@+id/btnTomarFoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/btn_gradient_orange"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:text="📸"
+                        android:textSize="28sp"
+                        android:gravity="center"
+                        android:background="@android:color/white"
+                        android:backgroundTint="#20FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tomar Foto"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/blanco" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Usar la cámara"
+                            android:textSize="12sp"
+                            android:textColor="#E0FFFFFF" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="→"
+                        android:textSize="24sp"
+                        android:textColor="@color/blanco" />
+                </LinearLayout>
+
+                <!-- Botón Elegir de Galería -->
+                <LinearLayout
+                    android:id="@+id/btnElegirGaleria"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/card_background"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:text="🖼️"
+                        android:textSize="28sp"
+                        android:gravity="center"
+                        android:background="@drawable/btn_gradient_orange"
+                        android:backgroundTint="#20FF6B35" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Elegir de Galería"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/negro" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Seleccionar imagen existente"
+                            android:textSize="12sp"
+                            android:textColor="@color/gris_medio" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="→"
+                        android:textSize="24sp"
+                        android:textColor="@color/naranja_primario" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Vista previa de cámara (oculta por defecto) -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
+        <!-- Card de Instrucciones -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardInstrucciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFF8F5">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="💡"
+                    android:textSize="24sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/txtInstrucciones"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Toma una foto o elige una imagen para detectar y leer texto"
+                    android:textSize="13sp"
+                    android:textColor="@color/gris_oscuro"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Resultado -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Texto Detectado"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Área de resultado con scroll -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="@color/gris_claro"
+                    android:padding="1dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/txtResultado"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Aquí aparecerá el texto detectado..."
+                        android:textSize="14sp"
+                        android:textColor="@color/gris_medio"
+                        android:padding="16dp"
+                        android:lineSpacingExtra="4dp" />
+                </ScrollView>
+
+                <!-- Botón Leer en Voz Alta -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnLeerVoz"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Leer en Voz Alta"
+                    android:textColor="@color/blanco"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_gradient_orange" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botón Volver -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnVolver"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="← Volver al Inicio"
+            android:textColor="@color/naranja_primario"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+</ScrollView>

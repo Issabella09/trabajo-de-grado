@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">EVA</string>
     <string name="accessibility_service_description">Servicio de lectura de pantalla para personas con discapacidad visual</string>
+
+    <string name="comandos_disponibles">
+    📢 Comandos disponibles:\n\n
+    • \'EVA leer notificaciones\'\n
+    • \'EVA abrir WhatsApp\'\n
+    • \'EVA leer texto\'\n
+    • \'EVA ayuda\'
+    </string>
 </resources>

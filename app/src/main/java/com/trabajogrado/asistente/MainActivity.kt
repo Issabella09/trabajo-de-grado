@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import android.content.ComponentName
+import android.widget.LinearLayout
 import android.util.Log
 import android.widget.Toast
 
@@ -33,21 +33,18 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // BOTÓN NUEVO OCR - AGREGA ESTAS LÍNEAS
-        val btnAbrirOCR: Button = findViewById(R.id.btnAbrirOCR)
+        val btnAsistenteVoz = findViewById<LinearLayout>(R.id.btnAsistenteVoz)
+        btnAsistenteVoz.setOnClickListener {
+            val intent = Intent(this, AsistenteVozActivity::class.java)
+            startActivity(intent)
+        }
+
+        val btnAbrirOCR = findViewById<LinearLayout>(R.id.btnAbrirOCR)
         btnAbrirOCR.setOnClickListener {
             abrirActividadOCR()
         }
 
-        val btnNotificaciones = findViewById<Button>(R.id.btnNotificaciones)
-        if (btnNotificaciones == null) {
-            Log.e("MainActivity", "❌❌❌ ERROR: btnNotificaciones NO EXISTE")
-            Toast.makeText(this, "ERROR: Botón no encontrado", Toast.LENGTH_LONG).show()
-            return
-        } else {
-            Log.d("MainActivity", "✅ Botón notificaciones encontrado")
-        }
-
+        val btnNotificaciones = findViewById<LinearLayout>(R.id.btnNotificaciones)
         btnNotificaciones.setOnClickListener {
             Log.d("MainActivity", "🎯🎯🎯 BOTÓN PRESIONADO - INICIANDO ACTIVIDAD")
 
