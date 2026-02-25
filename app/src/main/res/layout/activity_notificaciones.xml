@@ -1,88 +1,306 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/white">
+    android:background="@drawable/background_gradient"
+    android:fillViewport="true">
 
-    <!-- Título -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lectura de Notificaciones"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/naranja_primario"
-        android:layout_gravity="center"
-        android:layout_marginBottom="30dp" />
-
-    <!-- Estado del servicio -->
-    <TextView
-        android:id="@+id/txt_estado"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Estado del servicio..."
-        android:textSize="16sp"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="@color/naranja_claro"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Switch lectura automática -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="20dp">
+        android:orientation="vertical"
+        android:padding="20dp">
 
-        <Switch
-            android:id="@+id/switch_lectura_auto"
-            android:layout_width="0dp"
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/logo_eva"
+                android:contentDescription="Logo EVA"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Notificaciones"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario"
+                android:letterSpacing="0.02" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lectura automática"
+                android:textSize="14sp"
+                android:textColor="@color/gris_medio"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Card de Estado -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Estado del Servicio"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Badge de estado -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="@color/naranja_suave"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:text="🔔"
+                        android:textSize="24sp"
+                        android:gravity="center"
+                        android:background="@drawable/btn_gradient_orange" />
+
+                    <TextView
+                        android:id="@+id/txt_estado"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:text="Estado del servicio..."
+                        android:textSize="15sp"
+                        android:textColor="@color/texto_oscuro"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Configuración -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Configuración"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Switch con diseño mejorado -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="#FFF8F5"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lectura Automática"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/negro" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lee notificaciones al llegar"
+                            android:textSize="12sp"
+                            android:textColor="@color/gris_medio"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switch_lectura_auto"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- Botón de configuración -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_configurar_accesibilidad"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Configurar Accesibilidad"
+                    android:textColor="@color/blanco"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_gradient_orange" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botón seleccionar apps -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_seleccionar_apps"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:text="📱 Seleccionar Aplicaciones"
+            android:textColor="@color/naranja_primario"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange" />
+
+        <!-- Botón configurar prefijo -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_configurar_prefijo"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:text="💬 Configurar Estilo de Lectura"
+            android:textColor="@color/naranja_primario"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange" />
+
+        <!-- Card de Aplicaciones -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:text="Lectura automática de notificaciones"
-            android:textSize="16sp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Aplicaciones"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Selecciona las apps que quieres escuchar:"
+                    android:textSize="14sp"
+                    android:textColor="@color/gris_oscuro"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Lista de aplicaciones -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_apps"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="@color/gris_claro"
+                    android:padding="8dp"
+                    android:clipToPadding="false" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Información -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFF8F5">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Nota Importante"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/naranja_primario"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Para que EVA pueda leer tus notificaciones, debes activar el servicio de accesibilidad en la configuración de Android."
+                    android:textSize="13sp"
+                    android:textColor="@color/gris_oscuro"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botón Volver -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_volver"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="← Volver al Inicio"
+            android:textColor="@color/naranja_primario"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange"
+            android:layout_marginBottom="20dp" />
 
     </LinearLayout>
-
-    <!-- Botón configurar accesibilidad -->
-    <Button
-        android:id="@+id/btn_configurar_accesibilidad"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Configurar Servicio de Accesibilidad"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_primario"
-        android:layout_marginBottom="30dp"
-        android:textSize="16sp" />
-
-    <!-- Título apps -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Aplicaciones para leer:"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Lista de aplicaciones -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_apps"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Botón volver -->
-    <Button
-        android:id="@+id/btn_volver"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Volver al Inicio"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_oscuro"
-        android:textSize="16sp" />
-
-</LinearLayout>
+</ScrollView>

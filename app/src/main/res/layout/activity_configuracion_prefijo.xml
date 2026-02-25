@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_gradient"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/logo_eva"
+                android:contentDescription="Logo EVA"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Configurar Prefijo"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cómo quieres que EVA anuncie las notificaciones"
+                android:textSize="14sp"
+                android:textColor="@color/gris_medio"
+                android:textAlignment="center"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Card de opciones -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💬 Estilo de Lectura"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <RadioGroup
+                    android:id="@+id/radio_group_prefijo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Opción Notificación de -->
+                    <RadioButton
+                        android:id="@+id/radio_notificacion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="Notificación de [App]. [Título]. [Mensaje]"
+                        android:textSize="15sp"
+                        android:background="?attr/selectableItemBackground"
+                        android:checked="true" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/gris_claro"
+                        android:layout_marginVertical="8dp" />
+
+                    <!-- Opción Mensaje de -->
+                    <RadioButton
+                        android:id="@+id/radio_mensaje"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="Mensaje de [App]. [Título]. [Mensaje]"
+                        android:textSize="15sp"
+                        android:background="?attr/selectableItemBackground" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/gris_claro"
+                        android:layout_marginVertical="8dp" />
+
+                    <!-- Opción Sin prefijo -->
+                    <RadioButton
+                        android:id="@+id/radio_sin_prefijo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="[App]. [Título]. [Mensaje]"
+                        android:textSize="15sp"
+                        android:background="?attr/selectableItemBackground" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Ejemplo -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFF8F5">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Ejemplo"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/naranja_primario"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Notificación de: 'Notificación de WhatsApp. Juan. Hola, ¿cómo estás?'\n\n• Mensaje de: 'Mensaje de WhatsApp. Juan. Hola, ¿cómo estás?'\n\n• Sin prefijo: 'WhatsApp. Juan. Hola, ¿cómo estás?'"
+                    android:textSize="13sp"
+                    android:textColor="@color/gris_oscuro"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botón guardar -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_guardar_prefijo"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="✓ Guardar Preferencia"
+            android:textColor="@color/blanco"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_gradient_orange"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+</ScrollView>

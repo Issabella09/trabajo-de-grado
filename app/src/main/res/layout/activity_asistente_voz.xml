@@ -1,72 +1,350 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/white">
+    android:background="@drawable/background_gradient"
+    android:fillViewport="true">
 
-    <!-- Título -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Asistente de Voz EVA"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/naranja_primario"
-        android:layout_gravity="center"
-        android:layout_marginBottom="30dp" />
-
-    <!-- Estado -->
-    <TextView
-        android:id="@+id/txtEstadoAsistente"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Verificando permisos..."
-        android:textSize="16sp"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="@color/naranja_claro"
-        android:layout_marginBottom="30dp" />
-
-    <!-- Switch activación -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="30dp">
+        android:orientation="vertical"
+        android:padding="20dp">
 
-        <Switch
-            android:id="@+id/switchAsistenteVoz"
-            android:layout_width="0dp"
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Activar Asistente de Voz"
-            android:textSize="18sp"
-            android:enabled="false" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/logo_eva"
+                android:contentDescription="Logo EVA"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Asistente de Voz"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario"
+                android:letterSpacing="0.02" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Di 'EVA' para activar"
+                android:textSize="14sp"
+                android:textColor="@color/gris_medio"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Card de Estado -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Estado del Sistema"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Badge de estado -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="@color/naranja_suave"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:text="🎤"
+                        android:textSize="24sp"
+                        android:gravity="center"
+                        android:background="@drawable/btn_gradient_orange" />
+
+                    <TextView
+                        android:id="@+id/txtEstadoAsistente"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:text="Verificando permisos..."
+                        android:textSize="15sp"
+                        android:textColor="@color/texto_oscuro"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Control -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Activación"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Switch con diseño mejorado -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="#FFF8F5"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Asistente de Voz"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/negro" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Escucha continuamente tus comandos"
+                            android:textSize="12sp"
+                            android:textColor="@color/gris_medio"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switchAsistenteVoz"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:enabled="false" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Comandos Disponibles -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/blanco">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Comandos Disponibles"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/negro"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Lista de comandos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:backgroundTint="@color/gris_claro"
+                    android:padding="16dp">
+
+                    <!-- Comando 1 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/btn_gradient_orange" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="'EVA abre WhatsApp'"
+                            android:textSize="14sp"
+                            android:textColor="@color/texto_oscuro" />
+                    </LinearLayout>
+
+                    <!-- Comando 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/btn_gradient_orange" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="'EVA busca recetas de pizza'"
+                            android:textSize="14sp"
+                            android:textColor="@color/texto_oscuro" />
+                    </LinearLayout>
+
+                    <!-- Comando 3 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/btn_gradient_orange" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="'EVA lee mis notificaciones'"
+                            android:textSize="14sp"
+                            android:textColor="@color/texto_oscuro" />
+                    </LinearLayout>
+
+                    <!-- Comando 4 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/btn_gradient_orange" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="'EVA ayuda'"
+                            android:textSize="14sp"
+                            android:textColor="@color/texto_oscuro" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card de Consejos -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFF8F5">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Consejo"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/naranja_primario"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Habla con claridad y espera el sonido de confirmación antes de decir tu comando. EVA está siempre escuchando en segundo plano."
+                    android:textSize="13sp"
+                    android:textColor="@color/gris_oscuro"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botón Volver -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnVolverAsistente"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="← Volver al Inicio"
+            android:textColor="@color/naranja_primario"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange"
+            android:layout_marginBottom="20dp" />
 
     </LinearLayout>
-
-    <!-- Instrucciones -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/comandos_disponibles"
-        android:textSize="14sp"
-        android:lineSpacingExtra="4dp"
-        android:padding="16dp"
-        android:background="#F5F5F5"
-        android:layout_marginBottom="30dp" />
-
-    <!-- Botón volver -->
-    <Button
-        android:id="@+id/btnVolverAsistente"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Volver al Inicio"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/naranja_oscuro"
-        android:textSize="16sp" />
-
-</LinearLayout>
+</ScrollView>

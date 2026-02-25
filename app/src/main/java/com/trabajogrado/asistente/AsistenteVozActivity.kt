@@ -13,6 +13,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import android.content.Context
+import android.app.ActivityManager
 
 class AsistenteVozActivity : AppCompatActivity() {
 
@@ -23,6 +25,8 @@ class AsistenteVozActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_RECORD_AUDIO_PERMISSION = 200
+        private const val PREFS_NAME = "EVAPreferences"
+        private const val KEY_ASISTENTE_ACTIVO = "asistente_activo"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,8 +34,17 @@ class AsistenteVozActivity : AppCompatActivity() {
         setContentView(R.layout.activity_asistente_voz)
 
         inicializarVistas()
-        configurarListeners()
         verificarPermisos()
+        configurarListeners()
+
+        // Restaurar estado guardado
+        restaurarEstado()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Actualizar el switch según si el servicio está corriendo
+        actualizarEstadoUI()
     }
 
     private fun inicializarVistas() {
@@ -55,7 +68,6 @@ class AsistenteVozActivity : AppCompatActivity() {
     }
 
     private fun verificarPermisos(): Boolean {
-        // Verificar permiso de micrófono
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.RECORD_AUDIO
@@ -63,17 +75,14 @@ class AsistenteVozActivity : AppCompatActivity() {
         ) {
             Log.e(TAG, "❌ Permiso de micrófono NO concedido")
 
-            // Mostrar explicación primero
             if (ActivityCompat.shouldShowRequestPermissionRationale(
                     this,
                     Manifest.permission.RECORD_AUDIO
                 )) {
-                // Explicar al usuario por qué necesitamos el permiso
                 AlertDialog.Builder(this)
                     .setTitle("Permiso de micrófono necesario")
                     .setMessage("EVA necesita acceso al micrófono para escuchar el comando de voz 'EVA'")
                     .setPositiveButton("Entendido") { _, _ ->
-                        // Solicitar permiso después de explicar
                         solicitarPermisoMicrofono()
                     }
                     .setNegativeButton("Cancelar") { _, _ ->
@@ -81,7 +90,6 @@ class AsistenteVozActivity : AppCompatActivity() {
                     }
                     .show()
             } else {
-                // Solicitar permiso directamente
                 solicitarPermisoMicrofono()
             }
             return false
@@ -91,24 +99,6 @@ class AsistenteVozActivity : AppCompatActivity() {
         txtEstado.text = "✅ Permiso de micrófono concedido"
         switchAsistenteVoz.isEnabled = true
         return true
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Verificar permisos cada vez que se vuelve a la actividad
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            switchAsistenteVoz.isEnabled = true
-            txtEstado.text = "✅ Listo para activar"
-        } else {
-            switchAsistenteVoz.isEnabled = false
-            switchAsistenteVoz.isChecked = false
-            txtEstado.text = "❌ Se necesita permiso de micrófono"
-        }
     }
 
     private fun solicitarPermisoMicrofono() {
@@ -135,6 +125,7 @@ class AsistenteVozActivity : AppCompatActivity() {
                 } else {
                     txtEstado.text = "❌ Permiso de micrófono denegado"
                     switchAsistenteVoz.isEnabled = false
+                    switchAsistenteVoz.isChecked = false
                     Toast.makeText(this, "Se necesita permiso de micrófono para el asistente de voz", Toast.LENGTH_LONG).show()
                 }
             }
@@ -155,22 +146,20 @@ class AsistenteVozActivity : AppCompatActivity() {
         try {
             val intent = Intent(this, AsistenteVozService::class.java)
 
-            Log.d(TAG, "🚀 Intentando iniciar servicio...")
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
-                Log.d(TAG, "📲 startForegroundService llamado")
             } else {
                 startService(intent)
-                Log.d(TAG, "📲 startService llamado")
             }
+
+            // Guardar estado
+            guardarEstado(true)
 
             Toast.makeText(this, "✅ Asistente activado\nDi 'EVA' para comandos", Toast.LENGTH_LONG).show()
             Log.d(TAG, "🎉 Asistente activado")
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ ERROR CRÍTICO: ${e.message}", e)
-            e.printStackTrace()
+            Log.e(TAG, "❌ ERROR: ${e.message}", e)
             txtEstado.text = "❌ Error al activar"
             switchAsistenteVoz.isChecked = false
             Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -180,10 +169,80 @@ class AsistenteVozActivity : AppCompatActivity() {
     private fun desactivarAsistenteVoz() {
         txtEstado.text = "⏸️ Asistente de voz DESACTIVADO"
 
-        // Detener el servicio
         val intent = Intent(this, AsistenteVozService::class.java)
         stopService(intent)
 
+        // Guardar estado
+        guardarEstado(false)
+
         Toast.makeText(this, "Asistente de voz desactivado", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun guardarEstado(activo: Boolean) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_ASISTENTE_ACTIVO, activo).apply()
+        Log.d(TAG, "💾 Estado guardado: $activo")
+    }
+
+    private fun restaurarEstado() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val estabaActivo = prefs.getBoolean(KEY_ASISTENTE_ACTIVO, false)
+
+        Log.d(TAG, "📂 Estado guardado: $estabaActivo")
+
+        if (estabaActivo) {
+            // Verificar si el servicio realmente está corriendo
+            val servicioActivo = isServiceRunning(AsistenteVozService::class.java)
+
+            if (servicioActivo) {
+                // El servicio está corriendo, actualizar UI
+                switchAsistenteVoz.isChecked = true
+                txtEstado.text = "✅ Asistente de voz ACTIVADO\nDi 'EVA' seguido de tu comando"
+            } else {
+                // El servicio no está corriendo, reiniciarlo
+                if (verificarPermisos()) {
+                    Log.d(TAG, "🔄 Reiniciando servicio...")
+                    val intent = Intent(this, AsistenteVozService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                    switchAsistenteVoz.isChecked = true
+                    txtEstado.text = "✅ Asistente de voz ACTIVADO\nDi 'EVA' seguido de tu comando"
+                }
+            }
+        } else {
+            switchAsistenteVoz.isChecked = false
+            txtEstado.text = "⏸️ Asistente de voz DESACTIVADO"
+        }
+    }
+
+    private fun actualizarEstadoUI() {
+        val servicioActivo = isServiceRunning(AsistenteVozService::class.java)
+
+        if (servicioActivo) {
+            if (!switchAsistenteVoz.isChecked) {
+                switchAsistenteVoz.isChecked = true
+                txtEstado.text = "✅ Asistente de voz ACTIVADO\nDi 'EVA' seguido de tu comando"
+            }
+        } else {
+            if (switchAsistenteVoz.isChecked) {
+                switchAsistenteVoz.isChecked = false
+                txtEstado.text = "⏸️ Asistente de voz DESACTIVADO"
+                guardarEstado(false)
+            }
+        }
+    }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        @Suppress("DEPRECATION")
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
     }
 }

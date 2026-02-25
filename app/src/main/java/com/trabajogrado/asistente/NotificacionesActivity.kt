@@ -1,19 +1,20 @@
 package com.trabajogrado.asistente
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Button
-import android.widget.CompoundButton
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.content.ComponentName
-import android.widget.Toast
-import android.util.Log
 import android.content.pm.PackageManager
+
 class NotificacionesActivity : AppCompatActivity() {
 
     private lateinit var switchLecturaAuto: Switch
@@ -21,67 +22,58 @@ class NotificacionesActivity : AppCompatActivity() {
     private lateinit var recyclerApps: RecyclerView
     private lateinit var txtEstado: TextView
     private lateinit var btnVolver: Button
+    private lateinit var btnSeleccionarApps: Button
+    private lateinit var btnConfigurarPrefijo: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("Notificaciones", "🚀 onCreate INICIADO")
         setContentView(R.layout.activity_notificaciones)
-        Log.d("Notificaciones", "✅ setContentView completado")
 
-        try {
-            inicializarVistas()
-            Log.d("Notificaciones", "✅ Vistas inicializadas")
+        inicializarVistas()
+        configurarListeners()
+        cargarConfiguracion()
+        cargarListaApps()
+    }
 
-            configurarListeners()
-            Log.d("Notificaciones", "✅ Listeners configurados")
-
-            cargarConfiguracion()
-            Log.d("Notificaciones", "✅ Configuración cargada")
-
-            cargarListaApps()
-            Log.d("Notificaciones", "✅ Lista de apps cargada")
-
-        } catch (e: Exception) {
-            Log.e("Notificaciones", "❌ ERROR en onCreate: ${e.message}")
-            e.printStackTrace()
-        }
+    override fun onResume() {
+        super.onResume()
+        actualizarEstadoServicio()
     }
 
     private fun inicializarVistas() {
-        Log.d("Notificaciones", "🔍 Buscando vistas...")
-
         switchLecturaAuto = findViewById(R.id.switch_lectura_auto)
-        Log.d("Notificaciones", "   switchLecturaAuto: ${switchLecturaAuto != null}")
-
         btnConfigurarAccesibilidad = findViewById(R.id.btn_configurar_accesibilidad)
-        Log.d("Notificaciones", "   btnConfigurarAccesibilidad: ${btnConfigurarAccesibilidad != null}")
-
         recyclerApps = findViewById(R.id.recycler_apps)
-        Log.d("Notificaciones", "   recyclerApps: ${recyclerApps != null}")
-
         txtEstado = findViewById(R.id.txt_estado)
-        Log.d("Notificaciones", "   txtEstado: ${txtEstado != null}")
-
         btnVolver = findViewById(R.id.btn_volver)
-        Log.d("Notificaciones", "   btnVolver: ${btnVolver != null}")
+        btnSeleccionarApps = findViewById(R.id.btn_seleccionar_apps)
+        btnConfigurarPrefijo = findViewById(R.id.btn_configurar_prefijo)
 
-        // Configurar RecyclerView para apps
         recyclerApps.layoutManager = LinearLayoutManager(this)
-        Log.d("Notificaciones", "✅ LayoutManager configurado")
     }
 
     private fun configurarListeners() {
         switchLecturaAuto.setOnCheckedChangeListener { _, isChecked ->
             guardarConfiguracionLectura(isChecked)
             actualizarEstadoServicio()
-            notificarServicioConfiguracionCambiada()
         }
 
         btnConfigurarAccesibilidad.setOnClickListener {
-            abrirConfiguracionAccesibilidad()
+            abrirConfiguracionNotificaciones()
         }
+
         btnVolver.setOnClickListener {
             finish()
+        }
+
+        btnSeleccionarApps.setOnClickListener {
+            val intent = Intent(this, SeleccionAppsActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnConfigurarPrefijo.setOnClickListener {
+            val intent = Intent(this, ConfiguracionPrefijoActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -91,116 +83,118 @@ class NotificacionesActivity : AppCompatActivity() {
             putBoolean("lectura_automatica", activado)
             apply()
         }
-    }
 
-    private fun notificarServicioConfiguracionCambiada() {
-        // Notificar al servicio que la configuración cambió
-        LecturaPantallaService.actualizarConfiguracionNotificaciones()
+        Toast.makeText(
+            this,
+            if (activado) "✅ Lectura automática activada" else "⏸️ Lectura automática pausada",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun cargarConfiguracion() {
         val sharedPref = getSharedPreferences("config_notificaciones", MODE_PRIVATE)
         val lecturaAuto = sharedPref.getBoolean("lectura_automatica", false)
         switchLecturaAuto.isChecked = lecturaAuto
-
-        actualizarEstadoServicio()
     }
 
     private fun cargarListaApps() {
-        Log.d("Notificaciones", "🔄 INICIANDO cargarListaApps...")
-
         try {
-            Log.d("Notificaciones", "🔍 Obteniendo apps instaladas...")
             val appsInstaladas = obtenerAppsInstaladas()
-            Log.d("Notificaciones", "📱 Apps obtenidas: ${appsInstaladas.size}")
+            Log.d("Notificaciones", "📱 Apps encontradas: ${appsInstaladas.size}")
 
-            // DEBUG: Mostrar cada app encontrada
-            if (appsInstaladas.isEmpty()) {
-                Log.d("Notificaciones", "❌ LISTA VACÍA - No se encontraron apps")
-            } else {
-                appsInstaladas.forEachIndexed { index, app ->
-                    Log.d("Notificaciones", "   ${index + 1}. ${app.nombre} (activada: ${app.activada})")
-                }
-            }
-
-            Log.d("Notificaciones", "🔄 Configurando adapter...")
             val adapter = AppsAdapter(appsInstaladas) { app, activada ->
-                Log.d("Notificaciones", "🎚️ Switch cambiado: ${app.nombre} = $activada")
-                Toast.makeText(this, "${app.nombre} ${if (activada) "activada" else "desactivada"}",
-                    Toast.LENGTH_SHORT).show()
-                notificarServicioConfiguracionCambiada()
-                actualizarContadorApps()
+                guardarEstadoApp(app.nombre, activada)
+                actualizarContador()
             }
 
-            Log.d("Notificaciones", "🔄 Asignando adapter al RecyclerView...")
             recyclerApps.adapter = adapter
-            Log.d("Notificaciones", "✅ Adapter asignado")
-
-            actualizarContadorApps()
-            Log.d("Notificaciones", "✅ Contador actualizado")
+            actualizarContador()
 
         } catch (e: Exception) {
-            Log.e("Notificaciones", "❌ ERROR en cargarListaApps: ${e.message}")
-            e.printStackTrace()
-            Toast.makeText(this, "Error cargando apps: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e("Notificaciones", "❌ Error cargando apps: ${e.message}", e)
+            Toast.makeText(this, "Error cargando apps", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun obtenerAppsInstaladas(): List<AppInfo> {
         val apps = mutableListOf<AppInfo>()
+        val packageManager = packageManager
 
-        try {
-            // PRIMERO: Agregar apps principales que SIEMPRE queremos mostrar
-            val appsPrincipales = listOf(
-                "WhatsApp", "Instagram", "Facebook", "Telegram",
-                "Twitter", "Mensajes", "Gmail", "Llamadas"
-            )
+        // Mapeo de paquetes a nombres amigables
+        val appsConocidas = mapOf(
+            "com.whatsapp" to "WhatsApp",
+            "com.whatsapp.w4b" to "WhatsApp Business",
+            "com.instagram.android" to "Instagram",
+            "com.facebook.katana" to "Facebook",
+            "com.facebook.orca" to "Messenger",
+            "org.telegram.messenger" to "Telegram",
+            "com.twitter.android" to "Twitter",
+            "com.google.android.gm" to "Gmail",
+            "com.android.messaging" to "Mensajes",
+            "com.android.mms" to "Mensajes",
+            "com.google.android.apps.messaging" to "Mensajes",
+            "com.discord" to "Discord",
+            "com.skype.raider" to "Skype",
+            "com.viber.voip" to "Viber",
+            "com.snapchat.android" to "Snapchat",
+            "com.microsoft.teams" to "Microsoft Teams",
+            "org.thoughtcrime.securesms" to "Signal",
+            "com.tencent.mm" to "WeChat",
+            "jp.naver.line.android" to "LINE",
+            "com.linkedin.android" to "LinkedIn",
+            "com.slack" to "Slack",
+            "com.google.android.apps.inbox" to "Inbox",
+            "com.microsoft.office.outlook" to "Outlook",
+            "com.yahoo.mobile.client.android.mail" to "Yahoo Mail",
+            "com.tiktokv.lite" to "TikTok",
+            "com.zhiliaoapp.musically" to "TikTok"
+        )
 
-            appsPrincipales.forEach { nombreApp ->
-                apps.add(AppInfo(nombreApp, obtenerEstadoApp(nombreApp)))
+        // Buscar solo apps conocidas que estén instaladas
+        appsConocidas.forEach { (packageName, appName) ->
+            if (estaAppInstalada(packageName)) {
+                apps.add(AppInfo(appName, obtenerEstadoApp(appName)))
+                Log.d("Notificaciones", "✅ Encontrada: $appName")
             }
-
-            // SEGUNDO: Buscar apps instaladas específicas por paquete
-            val appsEspecificas = mapOf(
-                "com.whatsapp" to "WhatsApp",
-                "com.instagram.android" to "Instagram",
-                "com.facebook.katana" to "Facebook",
-                "org.telegram.messenger" to "Telegram",
-                "com.twitter.android" to "Twitter",
-                "com.android.messaging" to "Mensajes",
-                "com.google.android.gm" to "Gmail",
-                "com.android.dialer" to "Llamadas",
-                "com.discord" to "Discord",
-                "com.skype.raider" to "Skype",
-                "com.viber.voip" to "Viber",
-                "com.snapchat.android" to "Snapchat",
-                "com.microsoft.teams" to "Microsoft Teams",
-                "com.signal" to "Signal"
-            )
-
-            val packageManager = packageManager
-            appsEspecificas.forEach { (packageName, appName) ->
-                if (estaAppInstalada(packageName)) {
-                    // Evitar duplicados
-                    if (!apps.any { it.nombre == appName }) {
-                        apps.add(AppInfo(appName, obtenerEstadoApp(appName)))
-                    }
-                }
-            }
-
-            // TERCERO: Buscar más apps instaladas (opcional)
-            buscarOtrasAppsInstaladas(apps)
-
-            // Ordenar alfabéticamente
-            apps.sortBy { it.nombre }
-
-            Log.d("Notificaciones", "Apps encontradas: ${apps.size}")
-
-        } catch (e: Exception) {
-            Log.e("Notificaciones", "Error obteniendo apps instaladas: ${e.message}")
         }
 
-        return apps
+        // Buscar otras apps de mensajería instaladas
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_LAUNCHER)
+        }
+
+        try {
+            val allApps = packageManager.queryIntentActivities(intent, 0)
+
+            for (info in allApps) {
+                val packageName = info.activityInfo.packageName
+                val appName = info.loadLabel(packageManager).toString()
+
+                // Solo agregar si parece ser una app de comunicación
+                if (esAppDeComunicacion(packageName, appName) &&
+                    !apps.any { it.nombre.equals(appName, ignoreCase = true) }) {
+                    apps.add(AppInfo(appName, obtenerEstadoApp(appName)))
+                    Log.d("Notificaciones", "✅ Encontrada (extra): $appName")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Notificaciones", "Error buscando apps adicionales: ${e.message}")
+        }
+
+        // Ordenar alfabéticamente
+        return apps.sortedBy { it.nombre }
+    }
+
+    private fun esAppDeComunicacion(packageName: String, appName: String): Boolean {
+        val palabrasClave = listOf(
+            "chat", "messenger", "message", "mail", "sms", "whats",
+            "telegram", "signal", "discord", "slack", "teams"
+        )
+
+        return palabrasClave.any {
+            packageName.contains(it, ignoreCase = true) ||
+                    appName.contains(it, ignoreCase = true)
+        }
     }
 
     private fun estaAppInstalada(packageName: String): Boolean {
@@ -212,122 +206,68 @@ class NotificacionesActivity : AppCompatActivity() {
         }
     }
 
-    private fun buscarOtrasAppsInstaladas(appsList: MutableList<AppInfo>) {
-        try {
-            val packageManager = packageManager
-            val intent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_LAUNCHER)
-            }
+    private fun obtenerEstadoApp(nombreApp: String): Boolean {
+        val sharedPref = getSharedPreferences("apps_permitidas", MODE_PRIVATE)
+        return sharedPref.getBoolean(nombreApp, true)
+    }
 
-            val resolvedInfos = packageManager.queryIntentActivities(intent, 0)
-
-            // Apps del sistema que NO queremos mostrar
-            val appsExcluidas = listOf(
-                "settings", "camera", "calculator", "calendar", "gallery",
-                "email", "maps", "chrome", "photos", "clock", "contacts"
-            )
-
-            for (info in resolvedInfos) {
-                val packageName = info.activityInfo.packageName
-                val appName = info.loadLabel(packageManager).toString()
-
-                // Solo agregar si no es una app excluida y no está ya en la lista
-                val debeExcluir = appsExcluidas.any {
-                    packageName.contains(it, ignoreCase = true) ||
-                            appName.contains(it, ignoreCase = true)
-                }
-
-                if (!debeExcluir && !appsList.any { it.nombre.equals(appName, ignoreCase = true) }) {
-                    // Limitar a apps populares (evitar apps del sistema raras)
-                    if (esAppPopular(packageName) || appName.length in 2..30) {
-                        appsList.add(AppInfo(appName, obtenerEstadoApp(appName)))
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("Notificaciones", "Error buscando otras apps: ${e.message}")
+    private fun guardarEstadoApp(nombreApp: String, activada: Boolean) {
+        val sharedPref = getSharedPreferences("apps_permitidas", MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putBoolean(nombreApp, activada)
+            apply()
         }
+        Log.d("Notificaciones", "💾 $nombreApp: $activada")
     }
 
-    private fun esAppPopular(packageName: String): Boolean {
-        val appsPopulares = listOf(
-            "whatsapp", "instagram", "facebook", "messenger", "telegram",
-            "twitter", "gmail", "outlook", "discord", "skype", "viber",
-            "snapchat", "tiktok", "netflix", "spotify", "youtube"
-        )
-        return appsPopulares.any { packageName.contains(it, ignoreCase = true) }
-    }
-
-    private fun actualizarContadorApps() {
-        val totalApps = (recyclerApps.adapter?.itemCount ?: 0)
+    private fun actualizarContador() {
+        val totalApps = recyclerApps.adapter?.itemCount ?: 0
         val appsActivas = obtenerCantidadAppsActivas()
 
-        val textoContador = "Aplicaciones configuradas: $appsActivas/$totalApps activas"
-
-        txtEstado.text = textoContador // ← CAMBIA: usa txtEstado en lugar de findViewById
-
-        Log.d("Notificaciones", "Contador actualizado: $appsActivas/$totalApps")
+        Log.d("Notificaciones", "📊 Apps activas: $appsActivas/$totalApps")
     }
 
     private fun obtenerCantidadAppsActivas(): Int {
         val sharedPref = getSharedPreferences("apps_permitidas", MODE_PRIVATE)
-        val allPrefs = sharedPref.all
-
-        return allPrefs.count { it.value == true }
-    }
-
-    private fun esAppDelSistema(packageName: String): Boolean {
-        val appsSistema = listOf(
-            "com.android.settings",
-            "com.google.android.apps.photos",
-            "com.android.camera",
-            "com.android.calculator",
-            "com.google.android.calendar",
-            "com.android.contacts",
-            "com.android.dialer",
-            "com.android.gallery",
-            "com.android.email"
-        )
-        return appsSistema.any { packageName.contains(it) }
-    }
-
-    private fun obtenerEstadoApp(nombreApp: String): Boolean {
-        val sharedPref = getSharedPreferences("apps_permitidas", MODE_PRIVATE)
-        return sharedPref.getBoolean(nombreApp, true) // Por defecto activadas
+        return sharedPref.all.count { it.value == true }
     }
 
     private fun actualizarEstadoServicio() {
-        if (isServicioAccesibilidadActivado()) {
+        if (isServicioNotificacionesActivado()) {
             txtEstado.text = if (switchLecturaAuto.isChecked) {
                 "✅ Lectura automática ACTIVADA"
             } else {
                 "⏸️ Lectura automática PAUSADA"
             }
         } else {
-            txtEstado.text = "❌ Servicio de accesibilidad no activado"
+            txtEstado.text = "❌ Permiso de notificaciones no concedido"
         }
     }
 
-    private fun isServicioAccesibilidadActivado(): Boolean {
-        try {
-            val service = ComponentName(this, LecturaPantallaService::class.java)
-            val enabledServices = Settings.Secure.getString(
-                contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-            )
-            return enabledServices?.contains(service.flattenToString()) ?: false
-        } catch (e: Exception) {
-            Log.e("Notificaciones", "Error verificando servicio: ${e.message}")
-            return false
-        }
+    private fun isServicioNotificacionesActivado(): Boolean {
+        val enabledListeners = Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners"
+        )
+        val packageName = packageName
+        return enabledListeners?.contains(packageName) == true
     }
 
-    private fun abrirConfiguracionAccesibilidad() {
+    private fun abrirConfiguracionNotificaciones() {
         try {
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             startActivity(intent)
+            Toast.makeText(
+                this,
+                "Busca 'EVA' y activa el acceso a notificaciones",
+                Toast.LENGTH_LONG
+            ).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Error abriendo configuración de accesibilidad", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Error abriendo configuración",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
