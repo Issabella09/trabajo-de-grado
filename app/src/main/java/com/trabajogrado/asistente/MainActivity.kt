@@ -35,8 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnAsistenteVoz = findViewById<LinearLayout>(R.id.btnAsistenteVoz)
         btnAsistenteVoz.setOnClickListener {
-            val intent = Intent(this, AsistenteVozActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, AsistenteVozNuevoActivity::class.java))
         }
 
         val btnAbrirOCR = findViewById<LinearLayout>(R.id.btnAbrirOCR)

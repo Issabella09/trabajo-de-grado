@@ -72,8 +72,6 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.0")
 
     // Vosk para detección de palabra clave offline
-    implementation("com.alphacephei:vosk-android:0.3.47")
-    implementation("net.java.dev.jna:jna:5.13.0@aar")
 
     // ML Kit Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
