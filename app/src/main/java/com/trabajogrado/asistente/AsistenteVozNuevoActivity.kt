@@ -11,13 +11,9 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
-import android.view.View
-import android.view.animation.AnimationUtils
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -27,10 +23,14 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
 
     private val TAG = "AsistenteVozNuevo"
 
+    // ✅ NUEVO: Código de permiso
+    private val REQUEST_RECORD_AUDIO = 1
+
+    // ✅ SharedPreferences
+    private val PREFS_NAME = "EvaPreferences"
+    private val KEY_EVA_ACTIVE = "eva_active"
+
     // UI
-    private lateinit var cardBoton: CardView
-    private lateinit var btnHablar: RelativeLayout
-    private lateinit var tvEstado: TextView
     private lateinit var tvUltimoComando: TextView
     private lateinit var tvRespuesta: TextView
     private lateinit var switchEva: SwitchCompat
@@ -38,16 +38,12 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
 
     // Speech
     // Speech
-    private var speechRecognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
     private var ttsListo = false
-    private var escuchando = false
-    private var ultimoComandoParcial = ""
 
-    // ✅ NUEVO: Sistema EVA
+    // ✅ NUEVO: Sistema EVA con Vosk
     private var modoEvaActivo = false
-    private var esperandoComandoDespuesDeEva = false
-    private var escuchaActivaEva: SpeechRecognizer? = null
+    private lateinit var voskDetector: VoskHotwordDetector
 
     // Vibrador
     private lateinit var vibrator: Vibrator
@@ -58,21 +54,15 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
 
         inicializarVistas()
         inicializarTTS()
-        inicializarSpeechRecognizer()
         configurarListeners()
+        inicializarVosk()
     }
 
     private fun inicializarVistas() {
-        cardBoton = findViewById(R.id.card_boton_eva)
-        btnHablar = findViewById(R.id.btn_hablar)
-        tvEstado = findViewById(R.id.tv_estado)
         tvUltimoComando = findViewById(R.id.tv_ultimo_comando)
         tvRespuesta = findViewById(R.id.tv_respuesta)
-
-        // ✅ NUEVO
         switchEva = findViewById(R.id.switch_eva)
         tvEstadoEva = findViewById(R.id.tv_estado_eva)
-
         vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
     }
 
@@ -88,306 +78,12 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         }
     }
 
-    private fun inicializarSpeechRecognizer() {
-        if (SpeechRecognizer.isRecognitionAvailable(this)) {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-
-                override fun onReadyForSpeech(params: Bundle?) {
-                    Log.d(TAG, "✅ Listo para escuchar")
-                    runOnUiThread {
-                        tvRespuesta.text = "Listo! Habla ahora..."
-                    }
-                }
-
-                override fun onBeginningOfSpeech() {
-                    Log.d(TAG, "🎤 Detectando voz...")
-                    runOnUiThread {
-                        tvRespuesta.text = "Te estoy escuchando..."
-                    }
-                }
-
-                override fun onRmsChanged(rmsdB: Float) {}
-                override fun onBufferReceived(buffer: ByteArray?) {}
-
-                override fun onEndOfSpeech() {
-                    Log.d(TAG, "🔚 Fin de voz detectado")
-                    runOnUiThread {
-                        tvRespuesta.text = "Procesando..."
-                    }
-                }
-
-                override fun onError(error: Int) {
-                    val errorMsg = when (error) {
-                        SpeechRecognizer.ERROR_NO_MATCH -> "No se entendió"
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Timeout"
-                        SpeechRecognizer.ERROR_NETWORK -> "Error de red"
-                        SpeechRecognizer.ERROR_CLIENT -> "Error de cliente"
-                        SpeechRecognizer.ERROR_AUDIO -> "Error de audio"
-                        else -> "Error $error"
-                    }
-                    Log.e(TAG, "❌ $errorMsg")
-
-                    runOnUiThread {
-                        detenerEscucha()
-
-                        // ✅ Mensaje más claro según el error
-                        val mensaje = when (error) {
-                            SpeechRecognizer.ERROR_NO_MATCH -> "No te entendí. Habla más claro"
-                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No escuché nada. Intenta de nuevo"
-                            SpeechRecognizer.ERROR_NETWORK -> "Sin internet. Intenta de nuevo"
-                            else -> "Error. Intenta de nuevo"
-                        }
-
-                        mostrarRespuesta(mensaje)
-                    }
-                }
-
-                override fun onResults(results: Bundle?) {
-                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-
-                    if (matches != null && matches.isNotEmpty()) {
-                        // ✅ Caso 1: Hay resultado final
-                        val comando = matches[0]
-                        Log.d(TAG, "✅ COMANDO FINAL: $comando")
-
-                        runOnUiThread {
-                            detenerEscucha()
-                            tvUltimoComando.text = comando
-
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                procesarComando(comando)
-                            }, 300)
-                        }
-
-                    } else if (ultimoComandoParcial.isNotEmpty()) {
-                        // ✅ Caso 2: No hay resultado final, PERO SÍ hay parcial
-                        val comando = ultimoComandoParcial
-                        Log.d(TAG, "✅ USANDO PARCIAL: $comando")
-
-                        runOnUiThread {
-                            detenerEscucha()
-                            tvUltimoComando.text = comando
-
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                procesarComando(comando)
-                                ultimoComandoParcial = "" // Limpiar
-                            }, 300)
-                        }
-
-                    } else {
-                        // ✅ Caso 3: No hay NADA
-                        Log.e(TAG, "❌ Sin resultados finales ni parciales")
-                        runOnUiThread {
-                            detenerEscucha()
-                            mostrarRespuesta("No te entendí. Intenta de nuevo")
-                        }
-                    }
-                }
-
-                override fun onPartialResults(partialResults: Bundle?) {
-                    val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    if (matches != null && matches.isNotEmpty()) {
-                        val parcial = matches[0].lowercase().trim()
-                        Log.d(TAG, "📝 EVA parcial: $parcial")
-
-                        // ✅ DETECTAR "EVA" + COMANDO EN LA MISMA FRASE
-                        if (parcial.contains("eva")) {
-                            // Extraer el comando después de "eva"
-                            val comando = parcial.substringAfter("eva").trim()
-
-                            // ✅ SOLO PROCESAR SI EL COMANDO TIENE AL MENOS 3 PALABRAS
-                            val palabras = comando.split(" ").filter { it.isNotBlank() }
-
-                            if (palabras.size >= 2) {  // Al menos 2 palabras (ej: "qué hora")
-                                Log.d(TAG, "🎯 EVA DETECTADO! Comando: $comando (${palabras.size} palabras)")
-
-                                // ✅ Cancelar escucha actual
-                                try {
-                                    escuchaActivaEva?.cancel()
-                                    escuchaActivaEva?.destroy()
-                                    escuchaActivaEva = null
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error: ${e.message}")
-                                }
-
-                                // ✅ Procesar comando
-                                runOnUiThread {
-                                    try {
-                                        vibrator.vibrate(100)
-                                    } catch (e: Exception) {}
-
-                                    tvEstadoEva.text = "✅ Procesando: $comando"
-                                    tvUltimoComando.text = "EVA: $comando"
-
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        procesarComando(comando)
-
-                                        // ✅ Volver a escuchar después de 3 segundos
-                                        Handler(Looper.getMainLooper()).postDelayed({
-                                            if (modoEvaActivo) {
-                                                iniciarEscuchaContinua()
-                                            }
-                                        }, 3000)
-                                    }, 300)
-                                }
-                            } else {
-                                // Detectó "eva" + comando muy corto, seguir escuchando
-                                Log.d(TAG, "⏳ EVA detectado, esperando comando completo... (${palabras.size} palabras)")
-                                runOnUiThread {
-                                    tvEstadoEva.text = "⏳ EVA detectado, sigue hablando..."
-                                }
-                            }
-                        }
-                    }
-                }
-
-                override fun onEvent(eventType: Int, params: Bundle?) {}
-            })
-        } else {
-            Toast.makeText(this, "Reconocimiento de voz no disponible", Toast.LENGTH_LONG).show()
-        }
-    }
-
     private fun configurarListeners() {
-        btnHablar.setOnClickListener {
-            if (escuchando) {
-                detenerEscucha()
-            } else {
-                iniciarEscucha()
-            }
-        }
-
-        // ✅ NUEVO: Switch EVA
         switchEva.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 activarModoEva()
             } else {
                 desactivarModoEva()
-            }
-        }
-    }
-
-    private fun iniciarEscucha() {
-        if (escuchando) return
-
-        escuchando = true
-
-        // Vibración
-        try {
-            vibrator.vibrate(50)
-        } catch (e: Exception) {
-            Log.e(TAG, "Vibración no disponible")
-        }
-
-        // Animación
-        val animation = AnimationUtils.loadAnimation(this, R.anim.pulse)
-        cardBoton.startAnimation(animation)
-
-        // UI
-        tvEstado.text = "ESCUCHANDO..."
-        tvRespuesta.text = "Te estoy escuchando..."
-
-        // ✅ DESTRUIR Y RECREAR Speech Recognizer
-        try {
-            speechRecognizer?.destroy()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error destruyendo recognizer: ${e.message}")
-        }
-
-        // ✅ Crear nuevo recognizer
-        inicializarSpeechRecognizer()
-
-        // Speech
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "CO"))
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)  // ✅ Activar parciales
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000)  // ✅ 3 segundos
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000)  // ✅ 3 segundos
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 5000)  // ✅ Mínimo 5 segundos
-        }
-
-        try {
-            speechRecognizer?.startListening(intent)
-            Log.d(TAG, "🎤 Escuchando...")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error iniciando escucha: ${e.message}")
-            detenerEscucha()
-            mostrarRespuesta("Error al iniciar micrófono")
-        }
-    }
-
-    private fun detenerEscucha() {
-        escuchando = false
-
-        // Detener animación
-        cardBoton.clearAnimation()
-
-        // UI
-        tvEstado.text = "TOCA AQUÍ"
-
-        // Speech - Cancelar y destruir
-        try {
-            speechRecognizer?.cancel()
-            speechRecognizer?.destroy()
-            speechRecognizer = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deteniendo: ${e.message}")
-        }
-
-        Log.d(TAG, "🔇 Escucha detenida")
-    }
-
-    private fun procesarComando(comando: String) {
-        Log.d(TAG, "🔄 Procesando: $comando")
-
-        val comandoLower = comando.lowercase().trim()
-
-        when {
-            // Hora
-            comandoLower.contains("hora") || comandoLower.contains("qué hora") -> {
-                decirHora()
-            }
-
-            // Fecha
-            comandoLower.contains("fecha") ||
-                    comandoLower.contains("qué día") ||
-                    comandoLower.contains("que dia") -> {
-                decirFecha()
-            }
-
-            // Chiste
-            comandoLower.contains("chiste") || comandoLower.contains("cuéntame") -> {
-                contarChiste()
-            }
-
-            // Clima
-            comandoLower.contains("clima") ||
-                    comandoLower.contains("tiempo") ||
-                    comandoLower.contains("temperatura") -> {
-                buscarClima()
-            }
-
-            // Buscar en internet
-            comandoLower.contains("busca") || comandoLower.contains("buscar") -> {
-                val query = comandoLower
-                    .replace("busca", "")
-                    .replace("buscar", "")
-                    .replace("en google", "")
-                    .replace("en internet", "")
-                    .trim()
-                buscarEnInternet(query)
-            }
-
-            // Ayuda
-            comandoLower.contains("ayuda") -> {
-                responder("Puedo decir la hora, la fecha, contar chistes, buscar en internet, y más")
-            }
-
-            else -> {
-                responder("No entendí el comando. Di 'ayuda' para ver qué puedo hacer")
             }
         }
     }
@@ -487,154 +183,260 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         tvRespuesta.text = mensaje
     }
 
+    private fun procesarComando(comando: String) {
+        Log.d(TAG, "🔄 Procesando: $comando")
+
+        val comandoLower = comando.lowercase().trim()
+
+        when {
+            // Hora
+            comandoLower.contains("hora") || comandoLower.contains("qué hora") -> {
+                decirHora()
+            }
+
+            // Fecha
+            comandoLower.contains("fecha") ||
+                    comandoLower.contains("qué día") ||
+                    comandoLower.contains("que dia") -> {
+                decirFecha()
+            }
+
+            // Chiste
+            comandoLower.contains("chiste") || comandoLower.contains("cuéntame") -> {
+                contarChiste()
+            }
+
+            // Clima
+            comandoLower.contains("clima") ||
+                    comandoLower.contains("tiempo") ||
+                    comandoLower.contains("temperatura") -> {
+                buscarClima()
+            }
+
+            // Buscar en internet
+            comandoLower.contains("busca") || comandoLower.contains("buscar") -> {
+                val query = comandoLower
+                    .replace("busca", "")
+                    .replace("buscar", "")
+                    .replace("en google", "")
+                    .replace("en internet", "")
+                    .trim()
+                buscarEnInternet(query)
+            }
+
+            // Ayuda
+            comandoLower.contains("ayuda") -> {
+                responder("Puedo decir la hora, la fecha, contar chistes, buscar en internet, y más")
+            }
+
+            else -> {
+                responder("No entendí el comando. Di 'ayuda' para ver qué puedo hacer")
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
-        // ✅ Limpiar EVA
-        desactivarModoEva()
+        // ✅ Solo detener Vosk, NO cambiar el estado guardado
+        try {
+            voskDetector.stopListening()
+            voskDetector.cleanup()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error limpiando Vosk: ${e.message}")
+        }
 
-        speechRecognizer?.destroy()
         tts?.shutdown()
 
         Log.d(TAG, "🔚 Activity cerrada")
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_RECORD_AUDIO) {
+            if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "✅ Permiso de micrófono concedido")
+                // Reintentar activar EVA
+                switchEva.isChecked = true
+            } else {
+                Log.e(TAG, "❌ Permiso de micrófono denegado")
+                Toast.makeText(this, "Necesitas dar permiso de micrófono para usar EVA", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     // ===== SISTEMA EVA =====
 
     private fun activarModoEva() {
+        // ✅ Verificar permiso de micrófono
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQUEST_RECORD_AUDIO)
+            switchEva.isChecked = false
+            return
+        }
+
         modoEvaActivo = true
-        tvEstadoEva.text = "🎤 Di 'EVA' seguido de tu comando"
+        tvEstadoEva.text = "👂 Esperando 'EVA'..."
 
-        iniciarEscuchaContinua()
+        // ✅ Guardar estado
+        guardarEstadoEva(true)
 
-        Log.d(TAG, "✅ Modo EVA activado")
+        // ✅ Esperar 500ms antes de iniciar Vosk
+        Handler(Looper.getMainLooper()).postDelayed({
+            voskDetector.startListening()
+            Log.d(TAG, "✅ Modo EVA activado")
+        }, 500)
     }
 
     private fun desactivarModoEva() {
         modoEvaActivo = false
-        esperandoComandoDespuesDeEva = false
         tvEstadoEva.text = "Di 'EVA' seguido de tu comando"
 
+        // ✅ Guardar estado
+        guardarEstadoEva(false)
+
         try {
-            escuchaActivaEva?.cancel()
-            escuchaActivaEva?.destroy()
-            escuchaActivaEva = null
+            voskDetector.stopListening()
         } catch (e: Exception) {
-            Log.e(TAG, "Error deteniendo EVA: ${e.message}")
+            Log.e(TAG, "Error deteniendo Vosk: ${e.message}")
         }
 
         Log.d(TAG, "🔇 Modo EVA desactivado")
     }
 
-    private fun iniciarEscuchaContinua() {
-        if (!modoEvaActivo) return
+    private fun guardarEstadoEva(activo: Boolean) {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_EVA_ACTIVE, activo).apply()
+        Log.d(TAG, "💾 Estado de EVA guardado: $activo")
+    }
+    // ===== VOSK HOTWORD =====
 
-        // Crear nuevo recognizer para escucha continua
-        escuchaActivaEva = SpeechRecognizer.createSpeechRecognizer(this)
+    private fun inicializarVosk() {
+        voskDetector = VoskHotwordDetector(this) {
+            // ✅ Callback cuando detecta "EVA"
+            evaDetectadoConVosk()
+        }
 
-        escuchaActivaEva?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                Log.d(TAG, "👂 EVA listo")
+        voskDetector.initialize(
+            onReady = {
+                Log.d(TAG, "✅ Vosk listo para hotword detection")
+
+                // ✅ RESTAURAR ESTADO DESPUÉS de que Vosk esté listo
+                restaurarEstadoEva()
+            },
+            onError = { error ->
+                Log.e(TAG, "❌ Error Vosk: $error")
                 runOnUiThread {
-                    tvEstadoEva.text = "🎤 Di 'EVA' + comando"
+                    tvEstadoEva.text = "Error inicializando EVA"
                 }
+            }
+        )
+    }
+
+    private fun restaurarEstadoEva() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val evaActivo = prefs.getBoolean(KEY_EVA_ACTIVE, false)
+
+        Log.d(TAG, "📱 Estado guardado de EVA: $evaActivo")
+
+        // ✅ Restaurar switch SIN activar el listener
+        switchEva.setOnCheckedChangeListener(null)
+        switchEva.isChecked = evaActivo
+        switchEva.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                activarModoEva()
+            } else {
+                desactivarModoEva()
+            }
+        }
+
+        // ✅ Activar EVA si estaba activo
+        if (evaActivo) {
+            activarModoEva()
+        }
+    }
+
+    private fun evaDetectadoConVosk() {
+        Log.d(TAG, "🎯 ¡EVA DETECTADO POR VOSK!")
+
+        runOnUiThread {
+            try {
+                vibrator.vibrate(100)
+            } catch (e: Exception) {}
+
+            tvEstadoEva.text = "🎤 EVA activado, di tu comando..."
+
+            // ✅ Esperar 500ms y escuchar comando con Google
+            Handler(Looper.getMainLooper()).postDelayed({
+                iniciarEscuchaComandoConGoogle()
+            }, 500)
+        }
+    }
+
+    private fun iniciarEscuchaComandoConGoogle() {
+        // Crear recognizer temporal para el comando
+        val commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+
+        commandRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                Log.d(TAG, "✅ Listo para comando")
             }
 
             override fun onBeginningOfSpeech() {
-                Log.d(TAG, "🎤 EVA escuchando...")
+                Log.d(TAG, "🎤 Detectando comando...")
             }
 
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-
-            override fun onEndOfSpeech() {
-                Log.d(TAG, "🔚 EVA fin de voz")
-            }
+            override fun onEndOfSpeech() {}
 
             override fun onError(error: Int) {
-                Log.d(TAG, "⚠️ EVA error: $error")
+                Log.e(TAG, "❌ Error comando: $error")
 
-                // ✅ Reiniciar solo después de error
-                Handler(Looper.getMainLooper()).postDelayed({
-                    if (modoEvaActivo) {
-                        iniciarEscuchaContinua()
-                    }
-                }, 1000)
+                runOnUiThread {
+                    tvEstadoEva.text = "No te entendí, di 'EVA' de nuevo"
+
+                    // Volver a escuchar "EVA"
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (modoEvaActivo) {
+                            voskDetector.startListening()
+                            tvEstadoEva.text = "👂 Esperando 'EVA'..."
+                        }
+                    }, 2000)
+                }
             }
 
             override fun onResults(results: Bundle?) {
-                Log.d(TAG, "📝 EVA onResults")
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
-                // ✅ Reiniciar después de resultado
-                Handler(Looper.getMainLooper()).postDelayed({
-                    if (modoEvaActivo) {
-                        iniciarEscuchaContinua()
+                if (matches != null && matches.isNotEmpty()) {
+                    val comando = matches[0]
+                    Log.d(TAG, "✅ COMANDO: $comando")
+
+                    runOnUiThread {
+                        tvUltimoComando.text = "EVA: $comando"
+                        tvEstadoEva.text = "Procesando..."
+
+                        procesarComando(comando)
+
+                        // Volver a escuchar "EVA" después de 3 segundos
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            if (modoEvaActivo) {
+                                voskDetector.startListening()
+                                tvEstadoEva.text = "👂 Esperando 'EVA'..."
+                            }
+                        }, 3000)
                     }
-                }, 1000)
+                }
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
-                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (matches != null && matches.isNotEmpty()) {
-                    val parcial = matches[0].lowercase().trim()
-                    Log.d(TAG, "📝 EVA parcial: $parcial")
-
-                    // ✅ DETECTAR "EVA" + COMANDO EN LA MISMA FRASE
-                    if (parcial.contains("eva")) {
-                        // Extraer el comando después de "eva"
-                        val comando = parcial.substringAfter("eva").trim()
-
-                        // ✅ CONTAR PALABRAS DEL COMANDO
-                        val palabras = comando.split(" ").filter { it.isNotBlank() }
-
-                        // ✅ SOLO PROCESAR SI TIENE AL MENOS 2 PALABRAS
-                        if (palabras.size >= 2) {
-                            Log.d(TAG, "🎯 COMANDO COMPLETO! '$comando' (${palabras.size} palabras)")
-
-                            // ✅ Cancelar escucha actual
-                            try {
-                                escuchaActivaEva?.cancel()
-                                escuchaActivaEva?.destroy()
-                                escuchaActivaEva = null
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error: ${e.message}")
-                            }
-
-                            // ✅ Procesar comando
-                            runOnUiThread {
-                                try {
-                                    vibrator.vibrate(100)
-                                } catch (e: Exception) {}
-
-                                tvEstadoEva.text = "✅ Procesando: $comando"
-                                tvUltimoComando.text = "EVA: $comando"
-
-                                Handler(Looper.getMainLooper()).postDelayed({
-                                    procesarComando(comando)
-
-                                    // ✅ Volver a escuchar después de 3 segundos
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        if (modoEvaActivo) {
-                                            iniciarEscuchaContinua()
-                                        }
-                                    }, 3000)
-                                }, 300)
-                            }
-                        } else if (palabras.size == 1) {
-                            // Solo 1 palabra, esperar más
-                            Log.d(TAG, "⏳ EVA + 1 palabra ('$comando'), esperando más...")
-                            runOnUiThread {
-                                tvEstadoEva.text = "⏳ Sigue hablando..."
-                            }
-                        } else {
-                            // Solo "eva", esperar comando
-                            Log.d(TAG, "⏳ Solo 'EVA', esperando comando...")
-                            runOnUiThread {
-                                tvEstadoEva.text = "⏳ EVA detectado, di tu comando"
-                            }
-                        }
-                    }
-                }
+                // Mostrar parciales opcionalmente
             }
 
             override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -645,16 +447,8 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "CO"))
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            // ✅ 10 SEGUNDOS antes de timeout
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 10000)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 10000)
         }
 
-        try {
-            escuchaActivaEva?.startListening(intent)
-            Log.d(TAG, "👂 Escucha EVA iniciada")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error: ${e.message}")
-        }
+        commandRecognizer.startListening(intent)
     }
 }

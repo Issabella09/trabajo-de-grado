@@ -41,44 +41,6 @@
             android:layout_marginBottom="40dp" />
 
 
-
-        <!-- Botón principal (como Alexa) -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/card_boton_eva"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            app:cardCornerRadius="100dp"
-            app:cardElevation="12dp"
-            app:cardBackgroundColor="@color/naranja_primario"
-            android:layout_marginBottom="30dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/btn_hablar">
-
-                <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:src="@android:drawable/ic_btn_speak_now"
-                    android:layout_centerInParent="true"
-                    android:contentDescription="Micrófono"
-                    app:tint="@color/blanco" />
-
-                <TextView
-                    android:id="@+id/tv_estado"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="TOCA AQUÍ"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/blanco"
-                    android:layout_alignParentBottom="true"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginBottom="20dp" />
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
-
         <!-- Último comando -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"

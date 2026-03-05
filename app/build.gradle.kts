@@ -76,6 +76,9 @@ dependencies {
     // ML Kit Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
 
+    // ✅ Vosk para hotword detection (JNA ya incluido)
+    implementation("com.alphacephei:vosk-android:0.3.47")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
