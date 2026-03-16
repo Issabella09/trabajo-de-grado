@@ -23,9 +23,23 @@ class VoskHotwordDetector(
     private var isListening = false
     private var hotwordDetected = false
 
+
+    private fun limpiarModeloCorrupto() {
+        try {
+            val modelDir = File(context.filesDir, "vosk-model-small-es-0.42")
+            if (modelDir.exists()) {
+                Log.d(TAG, "🗑️ Limpiando modelo antiguo...")
+                modelDir.deleteRecursively()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error limpiando modelo: ${e.message}")
+        }
+    }
+
     fun initialize(onReady: () -> Unit, onError: (String) -> Unit) {
         Thread {
             try {
+                limpiarModeloCorrupto()
                 val modelPath = File(context.filesDir, "vosk-model-small-es-0.42")
 
                 Log.d(TAG, "📂 Verificando modelo en: ${modelPath.absolutePath}")
@@ -35,18 +49,14 @@ class VoskHotwordDetector(
                     copyModelFromAssets(modelPath)
                 }
 
-                // ✅ CORRECCIÓN: Los archivos están en una subcarpeta
-                val actualModelPath = File(modelPath, "vosk-model-small-es-0.42")
-
-                Log.d(TAG, "📂 Path real del modelo: ${actualModelPath.absolutePath}")
+                Log.d(TAG, "📂 Path del modelo: ${modelPath.absolutePath}")
                 Log.d(TAG, "📂 Contenido:")
-                actualModelPath.listFiles()?.forEach {
+                modelPath.listFiles()?.forEach {
                     Log.d(TAG, "   - ${it.name} (${if (it.isDirectory) "DIR" else "FILE"})")
                 }
 
-                // Verificar carpetas necesarias en el path correcto
                 val requiredDirs = listOf("am", "conf", "graph", "ivector")
-                val missing = requiredDirs.filter { !File(actualModelPath, it).exists() }
+                val missing = requiredDirs.filter { !File(modelPath, it).exists() }
 
                 if (missing.isNotEmpty()) {
                     throw Exception("Faltan carpetas: $missing")
@@ -55,7 +65,7 @@ class VoskHotwordDetector(
                 Log.d(TAG, "✅ Todas las carpetas necesarias presentes")
 
                 // Cargar modelo con el path correcto
-                model = Model(actualModelPath.absolutePath)
+                model = Model(modelPath.absolutePath)
 
                 Handler(Looper.getMainLooper()).post {
                     Log.d(TAG, "✅ Modelo Vosk cargado")

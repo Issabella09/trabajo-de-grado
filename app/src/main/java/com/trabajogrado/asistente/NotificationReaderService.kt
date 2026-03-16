@@ -14,6 +14,10 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     private var tts: TextToSpeech? = null
     private var ttsListo = false
 
+    // ✅ Caché para evitar repetir notificaciones de llamadas
+    private val llamadasAnunciadas = mutableSetOf<String>()
+    private var ultimaLlamadaAnunciada: Long = 0
+
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "✅ Servicio de notificaciones creado")
@@ -40,6 +44,12 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             val notification = sbn.notification
 
             Log.d(TAG, "📬 Nueva notificación de: $packageName")
+
+            // ✅ Detectar si es una llamada entrante
+            if (esLlamadaEntrante(sbn)) {
+                manejarLlamadaEntrante(sbn)
+                return
+            }
 
             // Verificar si la lectura automática está activada
             if (!isLecturaAutomaticaActivada()) {
@@ -74,7 +84,94 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        // No hacemos nada cuando se elimina una notificación
+        // ✅ Limpiar caché cuando se elimina notificación de llamada
+        if (esLlamadaEntrante(sbn)) {
+            val caller = obtenerNombreLlamante(sbn)
+            llamadasAnunciadas.remove(caller)
+            Log.d(TAG, "🔄 Llamada finalizada: $caller")
+
+            // ✅ Detener TTS si está hablando
+            tts?.stop()
+        }
+    }
+
+    // ✅ NUEVO: Detectar si es una llamada entrante
+    private fun esLlamadaEntrante(sbn: StatusBarNotification): Boolean {
+        val notification = sbn.notification
+
+        // Verificar categoría de llamada
+        if (notification.category == Notification.CATEGORY_CALL) {
+            return true
+        }
+
+        // Verificar package de teléfono
+        val packageName = sbn.packageName
+        if (packageName.contains("dialer", ignoreCase = true) ||
+            packageName.contains("phone", ignoreCase = true) ||
+            packageName.contains("call", ignoreCase = true) ||
+            packageName == "com.android.server.telecom") {
+            return true
+        }
+
+        // Verificar flags de llamada
+        if ((notification.flags and Notification.FLAG_INSISTENT) != 0) {
+            return true
+        }
+
+        return false
+    }
+
+    // ✅ NUEVO: Manejar llamada entrante
+    private fun manejarLlamadaEntrante(sbn: StatusBarNotification) {
+        val caller = obtenerNombreLlamante(sbn)
+        val ahora = System.currentTimeMillis()
+
+        // ✅ Evitar anunciar la misma llamada múltiples veces
+        if (llamadasAnunciadas.contains(caller)) {
+            Log.d(TAG, "🔇 Llamada ya anunciada: $caller")
+            return
+        }
+
+        // ✅ Evitar anuncios muy seguidos (menos de 3 segundos)
+        if (ahora - ultimaLlamadaAnunciada < 3000) {
+            Log.d(TAG, "⏱️ Anuncio muy reciente, esperando...")
+            return
+        }
+
+        // ✅ Anunciar la llamada UNA SOLA VEZ
+        llamadasAnunciadas.add(caller)
+        ultimaLlamadaAnunciada = ahora
+
+        val mensaje = "Llamada entrante de $caller"
+        Log.d(TAG, "📞 Anunciando: $mensaje")
+
+        // ✅ Detener cualquier TTS anterior y anunciar
+        tts?.stop()
+        tts?.speak(mensaje, TextToSpeech.QUEUE_FLUSH, null, null)
+
+        // ✅ Limpiar caché después de 30 segundos (por si no se elimina la notificación)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            llamadasAnunciadas.remove(caller)
+        }, 30000)
+    }
+
+    // ✅ NUEVO: Obtener nombre de quien llama
+    private fun obtenerNombreLlamante(sbn: StatusBarNotification): String {
+        val notification = sbn.notification
+
+        // Intentar obtener el nombre del título
+        val titulo = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+        if (!titulo.isNullOrEmpty()) {
+            return titulo
+        }
+
+        // Intentar obtener del texto
+        val texto = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+        if (!texto.isNullOrEmpty()) {
+            return texto
+        }
+
+        return "Número desconocido"
     }
 
     private fun leerNotificacion(appName: String, titulo: String, texto: String) {
@@ -140,6 +237,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         super.onDestroy()
         tts?.stop()
         tts?.shutdown()
+        llamadasAnunciadas.clear()
         Log.d(TAG, "🔚 Servicio de notificaciones destruido")
     }
 }
