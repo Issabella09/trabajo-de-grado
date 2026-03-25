@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="60dp"
+            android:layout_marginBottom="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EVA"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario"
+                android:letterSpacing="0.05" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Inicia sesión para continuar"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.5"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Campo email -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CORREO ELECTRÓNICO"
+            android:textSize="11sp"
+            android:letterSpacing="0.15"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.4"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="correo@ejemplo.com"
+            android:inputType="textEmailAddress"
+            android:background="@drawable/card_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Campo contraseña -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CONTRASEÑA"
+            android:textSize="11sp"
+            android:letterSpacing="0.15"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.4"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="••••••••"
+            android:inputType="textPassword"
+            android:background="@drawable/card_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Botón principal -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Iniciar Sesión"
+            android:textColor="@color/blanco"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_gradient_orange"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Divisor -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0.5dp"
+                android:layout_weight="1"
+                android:background="?attr/colorOnSurface"
+                android:alpha="0.1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  o  "
+                android:textSize="13sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.3" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0.5dp"
+                android:layout_weight="1"
+                android:background="?attr/colorOnSurface"
+                android:alpha="0.1" />
+        </LinearLayout>
+
+        <!-- Botón registro -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnIrARegistro"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Crear cuenta nueva"
+            android:textColor="@color/naranja_primario"
+            android:textSize="15sp"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_outline_orange"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Olvidé contraseña -->
+        <TextView
+            android:id="@+id/btnOlvidePassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="¿Olvidaste tu contraseña?"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="13sp"
+            android:alpha="0.4"
+            android:gravity="center"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginBottom="32dp" />
+
+        <ProgressBar
+            android:id="@+id/progressLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>

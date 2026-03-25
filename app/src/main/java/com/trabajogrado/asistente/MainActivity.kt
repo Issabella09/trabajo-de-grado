@@ -3,96 +3,101 @@ package com.trabajogrado.asistente
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
-import android.widget.LinearLayout
 import android.util.Log
-import android.widget.Toast
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.cardview.widget.CardView
 
 class MainActivity : AppCompatActivity() {
 
-    private var redireccionAutomatica = true
-    private lateinit var btnActivarServicio: Button
-    private lateinit var btnIrAControl: Button
+    private val PREFS_TEMA = "tema_preferencia"
+    private val KEY_TEMA = "modo_oscuro"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+        if (auth.currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
+        // Aplicar tema guardado ANTES de setContentView
+        val prefs = getSharedPreferences(PREFS_TEMA, MODE_PRIVATE)
+        val modoOscuro = prefs.getBoolean(KEY_TEMA, true) // oscuro por defecto
+        AppCompatDelegate.setDefaultNightMode(
+            if (modoOscuro) AppCompatDelegate.MODE_NIGHT_YES
+            else AppCompatDelegate.MODE_NIGHT_NO
+        )
+
         setContentView(R.layout.activity_main)
 
-        btnActivarServicio = findViewById(R.id.btnActivarServicio)
-        btnIrAControl = findViewById(R.id.btnIrAControl)
+        // Nombre del usuario
+        val txtNombre = findViewById<TextView>(R.id.txtNombreUsuario)
+        val uid = auth.currentUser!!.uid
+        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        db.collection("usuarios").document(uid).get()
+            .addOnSuccessListener { doc ->
+                val nombre = doc.getString("nombre") ?: auth.currentUser?.email ?: "Usuario"
+                txtNombre.text = nombre.split(" ")[0] // solo el primer nombre
+            }
 
-        btnActivarServicio.setOnClickListener {
-            // Abrir configuración de accesibilidad directamente
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivity(intent)
+        // Toggle tema
+        // Toggle tema
+        val btnToggle = findViewById<ImageButton>(R.id.btnToggleTema)
+        btnToggle.setImageResource(
+            if (modoOscuro) R.drawable.ic_sun
+            else R.drawable.ic_moon
+        )
+        btnToggle.setOnClickListener {
+            val nuevoModo = !modoOscuro
+            prefs.edit().putBoolean(KEY_TEMA, nuevoModo).apply()
+            btnToggle.setImageResource(
+                if (nuevoModo) R.drawable.ic_sun
+                else R.drawable.ic_moon
+            )
+            AppCompatDelegate.setDefaultNightMode(
+                if (nuevoModo) AppCompatDelegate.MODE_NIGHT_YES
+                else AppCompatDelegate.MODE_NIGHT_NO
+            )
         }
 
-        btnIrAControl.setOnClickListener {
-            val intent = Intent(this, ControlActivity::class.java)
-            startActivity(intent)
-        }
-
-        val btnAsistenteVoz = findViewById<LinearLayout>(R.id.btnAsistenteVoz)
-        btnAsistenteVoz.setOnClickListener {
+        // Navegación
+        findViewById<CardView>(R.id.cardAsistenteVoz).setOnClickListener {
             startActivity(Intent(this, AsistenteVozNuevoActivity::class.java))
         }
 
-        val btnAbrirOCR = findViewById<LinearLayout>(R.id.btnAbrirOCR)
-        btnAbrirOCR.setOnClickListener {
-            abrirActividadOCR()
+        findViewById<CardView>(R.id.cardLectorPantalla).setOnClickListener {
+            startActivity(Intent(this, ControlActivity::class.java))
         }
 
-        val btnNotificaciones = findViewById<LinearLayout>(R.id.btnNotificaciones)
-        btnNotificaciones.setOnClickListener {
-            Log.d("MainActivity", "🎯🎯🎯 BOTÓN PRESIONADO - INICIANDO ACTIVIDAD")
-
+        findViewById<CardView>(R.id.cardLectorTexto).setOnClickListener {
             try {
-                val intent = Intent(this, NotificacionesActivity::class.java)
-                startActivity(intent)
-                Log.d("MainActivity", "✅✅✅ ACTIVIDAD INICIADA")
+                startActivity(Intent(this, OCRActivity::class.java))
             } catch (e: Exception) {
-                Log.e("MainActivity", "❌❌❌ ERROR CRÍTICO: ${e.message}")
-                e.printStackTrace()
+                Log.e("MainActivity", "Error: ${e.message}")
             }
         }
-    }
 
-    private fun abrirActividadOCR() {
-        try {
-            val intent = Intent(this, OCRActivity::class.java)
-            startActivity(intent)
-            Log.d("MainActivity", "Abriendo actividad OCR")
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error al abrir OCR: ${e.message}")
-            android.widget.Toast.makeText(
-                this,
-                "Error al abrir lector de texto",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+        findViewById<CardView>(R.id.cardNotificaciones).setOnClickListener {
+            startActivity(Intent(this, NotificacionesActivity::class.java))
+        }
+
+        findViewById<CardView>(R.id.cardConfiguracion).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        findViewById<TextView>(R.id.btnLogout).setOnClickListener {
+            auth.signOut()
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        actualizarEstadoBotonControl()
-    }
-
-    private fun isAccessibilityServiceEnabled(): Boolean {
-        val serviceId = "$packageName/${LecturaPantallaService::class.java.canonicalName}" // ← CORREGIDO
-        val settings = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-        return settings?.contains(serviceId) == true
-    }
-
-    private fun actualizarEstadoBotonControl() {
-        if (isAccessibilityServiceEnabled()) {
-            // Si el servicio está activado, habilita el botón de control
-            btnIrAControl.isEnabled = true
-            btnIrAControl.alpha = 1.0f // Restaura la opacidad completa
-        } else {
-            // Si no, lo deshabilita y lo hace semitransparente
-            btnIrAControl.isEnabled = false
-            btnIrAControl.alpha = 0.5f // Efecto visual para que se vea deshabilitado
-        }
     }
 }

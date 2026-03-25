@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "604753235619",
+    "project_id": "eva-asistente-5f0a0",
+    "storage_bucket": "eva-asistente-5f0a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604753235619:android:c57c7980a5e7b6af833916",
+        "android_client_info": {
+          "package_name": "com.trabajogrado.asistente"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCwSDgzupuZXFM1wrKme1yE4L0eW3a-7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -18,7 +18,35 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     private val llamadasAnunciadas = mutableSetOf<String>()
     private var ultimaLlamadaAnunciada: Long = 0
 
+    companion object {
+        var instance: NotificationReaderService? = null
+        fun getNotificacionesActivas(service: NotificationReaderService): List<String> {
+            return try {
+                service.activeNotifications
+                    .filter { sbn ->
+                        val pkg = sbn.packageName
+                        !pkg.startsWith("android") &&
+                                !pkg.startsWith("com.android.systemui") &&
+                                !pkg.startsWith("com.miui") &&
+                                !pkg.startsWith("com.xiaomi")
+                    }
+                    .mapNotNull { sbn ->
+                        val titulo = sbn.notification.extras
+                            .getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+                        val texto = sbn.notification.extras
+                            .getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+                        val app = service.getAppName(sbn.packageName)
+                        if (titulo.isNotEmpty() || texto.isNotEmpty())
+                            "$app: $titulo. $texto"
+                        else null
+                    }
+            } catch (e: Exception) { emptyList() }
+        }
+    }
+
     override fun onCreate() {
+        super.onCreate()
+        instance = this
         super.onCreate()
         Log.d(TAG, "✅ Servicio de notificaciones creado")
 
@@ -214,7 +242,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         return prefs.getBoolean(appName, true) // Por defecto activadas
     }
 
-    private fun getAppName(packageName: String): String {
+    fun getAppName(packageName: String): String {
         return try {
             val appInfo = packageManager.getApplicationInfo(packageName, 0)
             packageManager.getApplicationLabel(appInfo).toString()
@@ -234,6 +262,8 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     }
 
     override fun onDestroy() {
+        super.onDestroy()
+        instance = null
         super.onDestroy()
         tts?.stop()
         tts?.shutdown()

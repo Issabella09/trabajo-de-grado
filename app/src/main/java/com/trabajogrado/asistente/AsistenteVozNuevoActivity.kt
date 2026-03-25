@@ -214,11 +214,28 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         tvRespuesta.text = mensaje
     }
 
+    private fun leerNotificacionesPendientes() {
+        val service = NotificationReaderService.instance
+        if (service == null) {
+            responder("No tengo permiso para leer notificaciones. Ve a Ajustes, Notificaciones, Acceso a notificaciones y activa EVA.")
+            return
+        }
+        val notis = NotificationReaderService.getNotificacionesActivas(service)
+        if (notis.isEmpty()) {
+            responder("No tienes notificaciones pendientes.")
+            return
+        }
+        responder("Tienes ${notis.size} notificaciones. ${notis.joinToString(". ")}")
+    }
+
     private fun procesarComando(comando: String) {
         Log.d(TAG, "🎯 Procesando comando: $comando")
         val comandoLower = comando.lowercase()
 
         when {
+            comandoLower.contains("notificacion") || comandoLower.contains("notificaciones") -> {
+                leerNotificacionesPendientes()
+            }
             comandoLower.contains("abrir") || comandoLower.contains("abre") -> {
                 val nombreApp = comandoLower
                     .replace("eva", "")
@@ -252,11 +269,9 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
                 }
             }
             comandoLower.contains("ayuda") -> {
-                responder("Puedo decirte la hora, la fecha, contarte chistes, abrir aplicaciones, o buscar en internet.")
+                responder("Puedo decirte la hora, la fecha, contarte chistes, abrir aplicaciones, leer notificaciones, o buscar en internet.")
             }
-            else -> {
-                responder("No entendí el comando")
-            }
+            else -> responder("No entendí el comando")
         }
     }
 

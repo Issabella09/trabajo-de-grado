@@ -3,49 +3,68 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/background_gradient"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
         <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="24dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="32dp">
 
-            <ImageView
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:src="@drawable/logo_eva"
-                android:contentDescription="Logo EVA"
-                android:layout_marginBottom="12dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Panel de Control"
-                android:textSize="28sp"
-                android:textStyle="bold"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PANEL"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.15"
+                    android:textColor="?attr/colorOnSurface"
+                    android:alpha="0.4" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lector de Pantalla"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnVolver"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="← Volver"
                 android:textColor="@color/naranja_primario"
-                android:letterSpacing="0.02" />
+                android:textSize="13sp"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_outline_orange"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
         </LinearLayout>
 
-        <!-- Card de Estado -->
+        <!-- Card estado -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/blanco">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/naranja_primario">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -56,54 +75,41 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Estado del Sistema"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/negro"
-                    android:layout_marginBottom="12dp" />
+                    android:text="ESTADO DEL SISTEMA"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.15"
+                    android:textColor="#CCFFFFFF" />
 
-                <!-- Badge de estado -->
-                <LinearLayout
+                <TextView
+                    android:id="@+id/txtEstado"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="@drawable/card_background"
-                    android:backgroundTint="@color/naranja_suave"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:text="✓"
-                        android:textSize="24sp"
-                        android:textColor="@color/blanco"
-                        android:gravity="center"
-                        android:background="@drawable/btn_gradient_orange" />
-
-                    <TextView
-                        android:id="@+id/txtEstado"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Estado: Verificando..."
-                        android:textSize="16sp"
-                        android:textColor="@color/texto_oscuro"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
+                    android:text="Verificando..."
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:layout_marginTop="6dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Card de Control Principal -->
+        <!-- Card lectura -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LECTURA DE PANTALLA"
+            android:textSize="11sp"
+            android:letterSpacing="0.15"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.4"
+            android:layout_marginBottom="12dp" />
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/blanco">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurface">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -111,25 +117,19 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Lectura de Pantalla"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/negro"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- Switch con diseño mejorado -->
+                <!-- Switch -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="@drawable/card_background"
-                    android:backgroundTint="#FFF8F5"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="20dp">
+
+                    <View
+                        android:layout_width="3dp"
+                        android:layout_height="40dp"
+                        android:background="@color/naranja_primario"
+                        android:layout_marginEnd="16dp" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -141,41 +141,43 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Activar Lectura"
-                            android:textSize="16sp"
+                            android:textSize="15sp"
                             android:textStyle="bold"
-                            android:textColor="@color/negro" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lee el contenido de la pantalla"
                             android:textSize="12sp"
-                            android:textColor="@color/gris_medio"
-                            android:layout_marginTop="4dp" />
+                            android:textColor="?attr/colorOnSurface"
+                            android:alpha="0.4"
+                            android:layout_marginTop="2dp" />
                     </LinearLayout>
 
                     <Switch
                         android:id="@+id/switchLectura"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
                 <!-- Divisor -->
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/gris_claro"
-                    android:layout_marginVertical="16dp" />
+                    android:layout_height="0.5dp"
+                    android:background="?attr/colorOnSurface"
+                    android:alpha="0.1"
+                    android:layout_marginBottom="20dp" />
 
-                <!-- Selector de Niveles -->
+                <!-- Niveles -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nivel de Detalle"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/negro"
+                    android:text="NIVEL DE DETALLE"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.15"
+                    android:textColor="?attr/colorOnSurface"
+                    android:alpha="0.4"
                     android:layout_marginBottom="12dp" />
 
                 <RadioGroup
@@ -184,87 +186,67 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Opción Nivel 1 -->
                     <RadioButton
                         android:id="@+id/radioNivel1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="Nivel 1: Básico\nSolo mensajes importantes"
-                        android:textSize="15sp"
-                        android:textColor="@color/negro"
-                        android:background="?attr/selectableItemBackground"
+                        android:padding="12dp"
+                        android:text="Nivel 1 — Solo mensajes importantes"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface"
                         android:checked="true" />
 
-                    <!-- Separador -->
                     <View
                         android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/gris_claro"
-                        android:layout_marginVertical="8dp" />
+                        android:layout_height="0.5dp"
+                        android:background="?attr/colorOnSurface"
+                        android:alpha="0.1"
+                        android:layout_marginVertical="4dp" />
 
-                    <!-- Opción Nivel 2 -->
                     <RadioButton
                         android:id="@+id/radioNivel2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="Nivel 2: Completo\nLee todo el contenido de la pantalla"
-                        android:textSize="15sp"
-                        android:textColor="@color/negro"
-                        android:background="?attr/selectableItemBackground" />
-
+                        android:padding="12dp"
+                        android:text="Nivel 2 — Todo el contenido de pantalla"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface" />
                 </RadioGroup>
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Card de Información -->
+        <!-- Consejo -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="24dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="#FFF8F5">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurface">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <View
+                    android:layout_width="3dp"
+                    android:layout_height="40dp"
+                    android:background="@color/naranja_primario"
+                    android:layout_marginEnd="16dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💡 Consejo"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/naranja_primario"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Usa el Nivel 1 para mensajes específicos y Nivel 2 para una experiencia completa de navegación."
+                    android:text="Usa Nivel 1 para mensajes específicos y Nivel 2 para navegación completa."
                     android:textSize="13sp"
-                    android:textColor="@color/gris_oscuro"
+                    android:textColor="?attr/colorOnSurface"
+                    android:alpha="0.6"
                     android:lineSpacingExtra="4dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
-        <!-- Botón Volver -->
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnVolver"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="← Volver al Inicio"
-            android:textColor="@color/naranja_primario"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textAllCaps="false"
-            android:background="@drawable/btn_outline_orange"
-            android:layout_marginBottom="20dp" />
 
     </LinearLayout>
 </ScrollView>
