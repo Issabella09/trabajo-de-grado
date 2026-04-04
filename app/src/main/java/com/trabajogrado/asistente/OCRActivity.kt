@@ -11,7 +11,7 @@ import java.util.Locale
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-
+import androidx.cardview.widget.CardView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -25,8 +25,8 @@ import android.widget.LinearLayout
 class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var textToSpeech: TextToSpeech
-    private lateinit var btnTomarFoto: LinearLayout
-    private lateinit var btnElegirGaleria: LinearLayout
+    private lateinit var btnTomarFoto: CardView
+    private lateinit var btnElegirGaleria: CardView
     private lateinit var btnLeerVoz: Button
     private lateinit var btnVolver: Button
     private lateinit var txtResultado: TextView
@@ -213,8 +213,8 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun inicializarVistas() {
         // Conectar variables con los elementos del layout
-        btnTomarFoto = findViewById<LinearLayout>(R.id.btnTomarFoto)
-        btnElegirGaleria = findViewById<LinearLayout>(R.id.btnElegirGaleria)
+        btnTomarFoto = findViewById<CardView>(R.id.btnTomarFoto)
+        btnElegirGaleria = findViewById<CardView>(R.id.btnElegirGaleria)
         btnLeerVoz = findViewById(R.id.btnLeerVoz)
         btnVolver = findViewById(R.id.btnVolver)
         txtResultado = findViewById(R.id.txtResultado)

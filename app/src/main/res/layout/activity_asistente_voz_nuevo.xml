@@ -12,67 +12,30 @@
         android:padding="24dp">
 
         <!-- Header -->
+        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="24dp">
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="ASISTENTE"
-                    android:textSize="11sp"
-                    android:letterSpacing="0.15"
-                    android:textColor="?attr/colorOnSurface"
-                    android:alpha="0.4" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="EVA"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/naranja_primario" />
-            </LinearLayout>
-
-            <!-- Badge estado EVA -->
-            <LinearLayout
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="?attr/colorSurface"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                android:text="ASISTENTE"
+                android:textSize="11sp"
+                android:letterSpacing="0.15"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.4" />
 
-                <View
-                    android:id="@+id/viewEstadoPunto"
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/card_background"
-                    android:backgroundTint="@color/acento_verde"
-                    android:layout_marginEnd="6dp" />
-
-                <TextView
-                    android:id="@+id/tv_estado_eva"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Di 'EVA' seguido de tu comando"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurface"
-                    android:alpha="0.6" />
-            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EVA"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario" />
         </LinearLayout>
 
         <!-- Card activación -->
@@ -122,6 +85,17 @@
                     android:checked="false" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tv_estado_eva"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Di 'EVA' seguido de tu comando"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.5"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="8dp" />
 
         <!-- Último comando -->
         <TextView

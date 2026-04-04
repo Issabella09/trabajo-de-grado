@@ -405,7 +405,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
             return
         }
         modoEvaActivo = true
-        tvEstadoEva.text = "👂 Esperando 'EVA'..."
+        tvEstadoEva.text = "Esperando 'EVA'..."
         Handler(Looper.getMainLooper()).postDelayed({
             voskDetector.startListening()
             Log.d(TAG, "✅ EVA activado")
