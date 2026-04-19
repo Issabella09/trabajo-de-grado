@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.google.firebase.auth.FirebaseAuth
 import android.widget.TextView
+import android.widget.ImageButton
 
 class LoginActivity : AppCompatActivity() {
 
@@ -31,6 +32,21 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
         btnIrARegistro = findViewById(R.id.btnIrARegistro)
         progress = findViewById(R.id.progressLogin)
+
+        val btnTogglePassword = findViewById<ImageButton>(R.id.btnTogglePassword)
+        var passwordVisible = false
+
+        btnTogglePassword.setOnClickListener {
+            passwordVisible = !passwordVisible
+            if (passwordVisible) {
+                etPassword.inputType = android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                btnTogglePassword.setImageResource(R.drawable.ic_eye)
+            } else {
+                etPassword.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                btnTogglePassword.setImageResource(R.drawable.ic_eye_off)
+            }
+            etPassword.setSelection(etPassword.text.length)
+        }
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
