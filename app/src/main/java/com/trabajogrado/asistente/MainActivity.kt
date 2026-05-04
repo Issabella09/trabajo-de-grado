@@ -45,7 +45,10 @@ class MainActivity : AppCompatActivity() {
                 txtNombre.text = nombre.split(" ")[0] // solo el primer nombre
             }
 
-        // Toggle tema
+        findViewById<CardView>(R.id.cardDescripcion).setOnClickListener {
+            startActivity(Intent(this, DescripcionCamaraActivity::class.java))
+        }
+
         // Toggle tema
         val btnToggle = findViewById<ImageButton>(R.id.btnToggleTema)
         btnToggle.setImageResource(
