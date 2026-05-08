@@ -145,7 +145,7 @@ class DescripcionCamaraActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                 // Traducción básica de etiquetas comunes
                 val traduccion = mapOf(
                     // Personas y cuerpo
-                    "person" to "persona", "man" to "hombre", "woman" to "mujer",
+                    "person" to "persona","nail" to "uña", "man" to "hombre", "woman" to "mujer",
                     "child" to "niño", "boy" to "niño", "girl" to "niña",
                     "face" to "cara", "hand" to "mano", "eye" to "ojo",
                     "mouth" to "boca", "nose" to "nariz", "ear" to "oreja",

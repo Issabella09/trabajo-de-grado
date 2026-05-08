@@ -37,8 +37,9 @@ class ConfiguracionPrefijoActivity : AppCompatActivity() {
 
         when (prefijo) {
             "notificacion" -> radioNotificacion.isChecked = true
-            "mensaje" -> radioMensaje.isChecked = true
-            "sin_prefijo" -> radioSinPrefijo.isChecked = true
+            "app_solo", "sin_prefijo", "mensaje" -> radioMensaje.isChecked = true  // legado incluido
+            "solo_mensaje" -> radioSinPrefijo.isChecked = true
+            else -> radioNotificacion.isChecked = true
         }
     }
 
@@ -51,9 +52,9 @@ class ConfiguracionPrefijoActivity : AppCompatActivity() {
 
     private fun guardarPreferencia() {
         val prefijo = when (radioGroup.checkedRadioButtonId) {
-            R.id.radio_notificacion -> "notificacion"
-            R.id.radio_mensaje -> "mensaje"
-            R.id.radio_sin_prefijo -> "sin_prefijo"
+            R.id.radio_notificacion -> "notificacion"  // "Notificación de [App]: [mensaje]"
+            R.id.radio_mensaje -> "app_solo"            // "[App]: [mensaje]"
+            R.id.radio_sin_prefijo -> "solo_mensaje"    // "Solo el mensaje"
             else -> "notificacion"
         }
 

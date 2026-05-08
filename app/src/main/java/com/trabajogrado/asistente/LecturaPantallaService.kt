@@ -16,7 +16,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private var ultimaAppAnunciada: String? = null
     private var lecturaActiva: Boolean = false
     private var isLecturaNotificacionesActiva = false
-    private val notificacionesLeidas = mutableSetOf<String>()
+
+    // hash del texto → timestamp de primera lectura
+    private val notificacionesLeidas = LinkedHashMap<String, Long>()
+    private val DEDUP_WINDOW_NOTIF_MS = 30_000L   // misma notificación en 30 s = duplicado
+    private val MAX_NOTIF_CACHE = 100              // máximo de entradas en caché
 
     // Métodos para controlar el servicio desde la app
     fun activarLectura() {
@@ -90,7 +94,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     override fun onServiceConnected() {
         Log.d(TAG, "✅ Servicio de lectura de pantalla CONECTADO")
-        instance = this  // ← GUARDAR INSTANCIA
+        instance = this
+
+        val prefs = getSharedPreferences("PrefsAsistente", MODE_PRIVATE)
+        Companion.lecturaActiva = prefs.getBoolean("lectura_activa", false)
+        Log.d(TAG, "🔄 Estado restaurado: lecturaActiva=${Companion.lecturaActiva}")
 
         // Configurar el servicio de accesibilidad
         configurarServicio()
@@ -159,8 +167,9 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                     Log.d(TAG, "🔔 Leyendo notificación: $mensaje")
                     leerEnVozAlta(mensaje)
 
-                    // Marcar como leída
-                    notificacionesLeidas.add(textoNotificacion.hashCode().toString())
+                    // Marcar como leída con timestamp y limpiar caché
+                    notificacionesLeidas[textoNotificacion.hashCode().toString()] = System.currentTimeMillis()
+                    limpiarCacheNotificaciones()
                 }
             }
         } catch (e: Exception) {
@@ -178,7 +187,19 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     private fun esNotificacionNueva(texto: String): Boolean {
         val hash = texto.hashCode().toString()
-        return !notificacionesLeidas.contains(hash)
+        val ultima = notificacionesLeidas[hash] ?: return true
+        return (System.currentTimeMillis() - ultima) > DEDUP_WINDOW_NOTIF_MS
+    }
+
+    private fun limpiarCacheNotificaciones() {
+        val ahora = System.currentTimeMillis()
+        val iter = notificacionesLeidas.entries.iterator()
+        while (iter.hasNext()) {
+            if (ahora - iter.next().value > DEDUP_WINDOW_NOTIF_MS * 2) iter.remove()
+        }
+        while (notificacionesLeidas.size > MAX_NOTIF_CACHE) {
+            notificacionesLeidas.entries.iterator().let { it.next(); it.remove() }
+        }
     }
 
     private fun obtenerNombreApp(packageName: String): String {

@@ -24,6 +24,7 @@ class ControlActivity : AppCompatActivity() {
     private lateinit var btnVolver: Button
     private val PREFS_NAME = "PrefsAsistente"
     private val KEY_NIVEL_LECTURA = "nivel_lectura"
+    private val KEY_LECTURA_ACTIVA = "lectura_activa"
     private val TAG = "ControlActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +60,8 @@ class ControlActivity : AppCompatActivity() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val nivelSeleccionado = prefs.getInt(KEY_NIVEL_LECTURA, R.id.radioNivel1)
         radioGroupNiveles.check(nivelSeleccionado)
+        switchLectura.isChecked = prefs.getBoolean(KEY_LECTURA_ACTIVA, false)
+        actualizarVisibilidadSelector()
     }
 
     private fun guardarPreferenciaNivel(checkedId: Int) {
@@ -91,6 +94,7 @@ class ControlActivity : AppCompatActivity() {
     }
 
     private fun activarLecturaPantalla() {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_LECTURA_ACTIVA, true).apply()
         Log.d(TAG, "Usuario activó lectura de pantalla")
         txtEstado.text = "Estado: Lectura ACTIVADA - ${obtenerTextoNivelSeleccionado()}"
 
@@ -114,6 +118,7 @@ class ControlActivity : AppCompatActivity() {
     }
 
     private fun desactivarLecturaPantalla() {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_LECTURA_ACTIVA, false).apply()
         Log.d(TAG, "Usuario desactivó lectura de pantalla")
         txtEstado.text = "Estado: Lectura DESACTIVADA"
 
@@ -161,7 +166,10 @@ class ControlActivity : AppCompatActivity() {
 
     private fun verificarEstadoServicio() {
         if (esServicioAccesibilidadActivo()) {
-            txtEstado.text = "Estado: Permisos concedidos - Listo para usar"
+            txtEstado.text = if (switchLectura.isChecked)
+                "Estado: Lectura ACTIVADA - ${obtenerTextoNivelSeleccionado()}"
+            else
+                "Estado: Permisos concedidos - Listo para usar"
             switchLectura.isEnabled = true
         } else {
             txtEstado.text = "Estado: Permisos NO concedidos"

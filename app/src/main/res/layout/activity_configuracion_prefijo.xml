@@ -76,48 +76,100 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Opción Notificación de -->
+                    <!-- Opción 1: prefijo completo "Notificación de [app]" -->
                     <RadioButton
                         android:id="@+id/radio_notificacion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="Notificación de [App]. [Título]. [Mensaje]"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="4dp"
+                        android:text="Notificación de [App]: [mensaje]"
                         android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:background="?attr/selectableItemBackground"
-                        android:checked="true" />
+                        android:checked="true"
+                        android:contentDescription="Opción uno: prefijo completo. EVA dirá Notificación de, seguido del nombre de la aplicación y el mensaje." />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp"
+                        android:text="Ej: «Notificación de WhatsApp. Juan. Hola»"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:alpha="0.5"
+                        android:importantForAccessibility="no" />
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/gris_claro"
-                        android:layout_marginVertical="8dp" />
+                        android:background="@color/gris_claro" />
 
-                    <!-- Opción Mensaje de -->
+                    <!-- Opción 2: solo el nombre de la app, sin palabra "Notificación" -->
                     <RadioButton
                         android:id="@+id/radio_mensaje"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="Mensaje de [App]. [Título]. [Mensaje]"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="4dp"
+                        android:text="[App]: [mensaje]"
                         android:textSize="15sp"
-                        android:background="?attr/selectableItemBackground" />
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="Opción dos: solo el nombre de la aplicación. EVA dirá el nombre de la aplicación seguido del mensaje, sin decir Notificación de." />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp"
+                        android:text="Ej: «WhatsApp. Juan. Hola»"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:alpha="0.5"
+                        android:importantForAccessibility="no" />
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/gris_claro"
-                        android:layout_marginVertical="8dp" />
+                        android:background="@color/gris_claro" />
 
-                    <!-- Opción Sin prefijo -->
+                    <!-- Opción 3: solo el mensaje, sin app ni prefijo -->
                     <RadioButton
                         android:id="@+id/radio_sin_prefijo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="[App]. [Título]. [Mensaje]"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="4dp"
+                        android:text="Solo el mensaje"
                         android:textSize="15sp"
-                        android:background="?attr/selectableItemBackground" />
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="Opción tres: solo el mensaje. EVA dirá únicamente el contenido de la notificación, sin mencionar la aplicación." />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp"
+                        android:text="Ej: «Juan. Hola»"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:alpha="0.5"
+                        android:importantForAccessibility="no" />
 
                 </RadioGroup>
 
@@ -151,7 +203,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="• Notificación de: 'Notificación de WhatsApp. Juan. Hola, ¿cómo estás?'\n\n• Mensaje de: 'Mensaje de WhatsApp. Juan. Hola, ¿cómo estás?'\n\n• Sin prefijo: 'WhatsApp. Juan. Hola, ¿cómo estás?'"
+                    android:text="• Notificación de [App]:\n  «Notificación de WhatsApp. Juan. Hola»\n\n• [App]: [mensaje]:\n  «WhatsApp. Juan. Hola»\n\n• Solo el mensaje:\n  «Juan. Hola»"
                     android:textSize="13sp"
                     android:textColor="@color/gris_oscuro"
                     android:lineSpacingExtra="4dp" />

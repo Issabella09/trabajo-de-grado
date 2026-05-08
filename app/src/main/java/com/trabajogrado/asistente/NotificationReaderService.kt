@@ -1,12 +1,20 @@
 package com.trabajogrado.asistente
 
 import android.app.Notification
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.ContactsContract
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 class NotificationReaderService : NotificationListenerService(), TextToSpeech.OnInitListener {
 
@@ -14,12 +22,24 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     private var tts: TextToSpeech? = null
     private var ttsListo = false
 
-    // ✅ Caché para evitar repetir notificaciones de llamadas
-    private val llamadasAnunciadas = mutableSetOf<String>()
-    private var ultimaLlamadaAnunciada: Long = 0
+    private val snapshotInicial = HashMap<String, Int>()
+    private val ultimoTextoLeido = LinkedHashMap<String, String>()
+    private val MAX_ULTIMOS_TEXTOS = 50
+    private val llamadasAnunciadas = LinkedHashMap<String, Long>()
+
+    // CORRECCIÓN 2: detiene TTS cuando el usuario presiona el botón de bloqueo/apagado
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                tts?.stop()
+                Log.d(TAG, "🔲 Pantalla apagada — TTS detenido")
+            }
+        }
+    }
 
     companion object {
         var instance: NotificationReaderService? = null
+
         fun getNotificacionesActivas(service: NotificationReaderService): List<String> {
             return try {
                 service.activeNotifications
@@ -47,11 +67,31 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     override fun onCreate() {
         super.onCreate()
         instance = this
-        super.onCreate()
         Log.d(TAG, "✅ Servicio de notificaciones creado")
-
-        // Inicializar Text-to-Speech
         tts = TextToSpeech(this, this)
+        // CORRECCIÓN 2: registrar el receiver al crear el servicio
+        registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        capturarSnapshotInicial()
+    }
+
+    private fun capturarSnapshotInicial() {
+        snapshotInicial.clear()
+        try {
+            activeNotifications?.forEach { sbn ->
+                val titulo = sbn.notification.extras
+                    .getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+                val texto = sbn.notification.extras
+                    .getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+                snapshotInicial[sbn.key] = "$titulo|$texto".hashCode()
+            }
+            Log.d(TAG, "📋 Snapshot inicial: ${snapshotInicial.size} notificaciones preexistentes")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error capturando snapshot: ${e.message}")
+        }
     }
 
     override fun onInit(status: Int) {
@@ -71,40 +111,52 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             val packageName = sbn.packageName
             val notification = sbn.notification
 
-            Log.d(TAG, "📬 Nueva notificación de: $packageName")
+            Log.d(TAG, "📬 Notificación de: $packageName | key: ${sbn.key}")
 
-            // ✅ Detectar si es una llamada entrante
             if (esLlamadaEntrante(sbn)) {
                 manejarLlamadaEntrante(sbn)
                 return
             }
 
-            // Verificar si la lectura automática está activada
-            if (!isLecturaAutomaticaActivada()) {
-                Log.d(TAG, "⏸️ Lectura automática desactivada")
+            if (!isLecturaAutomaticaActivada()) return
+
+            // CORRECCIÓN 3: filtrar por packageName (no por nombre de app)
+            if (!isAppPermitida(packageName)) {
+                Log.d(TAG, "🚫 App no permitida: $packageName")
                 return
             }
 
-            // Verificar si esta app está en la lista permitida
             val appName = getAppName(packageName)
-            if (!isAppPermitida(appName)) {
-                Log.d(TAG, "🚫 App no permitida: $appName")
+            val titulo = notification.extras
+                .getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+            val texto = notification.extras
+                .getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+
+            if (titulo.isEmpty() && texto.isEmpty()) return
+
+            val contenidoHash = "$titulo|$texto".hashCode()
+            val hashSnapshot = snapshotInicial[sbn.key]
+            if (hashSnapshot != null) {
+                if (hashSnapshot == contenidoHash) {
+                    Log.d(TAG, "📋 Preexistente sin cambios, omitida")
+                    return
+                } else {
+                    snapshotInicial.remove(sbn.key)
+                }
+            }
+
+            if (ultimoTextoLeido[sbn.key] == texto) {
+                Log.d(TAG, "🔇 Texto sin cambios, omitido")
                 return
             }
 
-            // Extraer información de la notificación
-            val titulo = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-            val texto = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-            val textoGrande = notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: texto
-
-            Log.d(TAG, "📱 App: $appName")
-            Log.d(TAG, "📌 Título: $titulo")
-            Log.d(TAG, "💬 Texto: $textoGrande")
-
-            // Leer la notificación
-            if (titulo.isNotEmpty() || textoGrande.isNotEmpty()) {
-                leerNotificacion(appName, titulo, textoGrande)
+            ultimoTextoLeido[sbn.key] = texto
+            if (ultimoTextoLeido.size > MAX_ULTIMOS_TEXTOS) {
+                ultimoTextoLeido.entries.iterator().let { it.next(); it.remove() }
             }
+
+            Log.d(TAG, "📱 $appName | 📌 $titulo | 💬 $texto")
+            leerNotificacion(appName, titulo, texto)
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error procesando notificación: ${e.message}", e)
@@ -112,94 +164,108 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        // ✅ Limpiar caché cuando se elimina notificación de llamada
         if (esLlamadaEntrante(sbn)) {
-            val caller = obtenerNombreLlamante(sbn)
-            llamadasAnunciadas.remove(caller)
-            Log.d(TAG, "🔄 Llamada finalizada: $caller")
-
-            // ✅ Detener TTS si está hablando
+            llamadasAnunciadas.remove(sbn.key)
             tts?.stop()
+            Log.d(TAG, "🔄 Llamada finalizada: ${sbn.key}")
         }
+        ultimoTextoLeido.remove(sbn.key)
+        snapshotInicial.remove(sbn.key)
     }
 
-    // ✅ NUEVO: Detectar si es una llamada entrante
     private fun esLlamadaEntrante(sbn: StatusBarNotification): Boolean {
         val notification = sbn.notification
-
-        // Verificar categoría de llamada
-        if (notification.category == Notification.CATEGORY_CALL) {
-            return true
-        }
-
-        // Verificar package de teléfono
+        if (notification.category == Notification.CATEGORY_CALL) return true
         val packageName = sbn.packageName
         if (packageName.contains("dialer", ignoreCase = true) ||
             packageName.contains("phone", ignoreCase = true) ||
             packageName.contains("call", ignoreCase = true) ||
-            packageName == "com.android.server.telecom") {
-            return true
-        }
-
-        // Verificar flags de llamada
-        if ((notification.flags and Notification.FLAG_INSISTENT) != 0) {
-            return true
-        }
-
+            packageName == "com.android.server.telecom") return true
+        if ((notification.flags and Notification.FLAG_INSISTENT) != 0) return true
         return false
     }
 
-    // ✅ NUEVO: Manejar llamada entrante
+    // CORRECCIÓN 1: búsqueda de contacto en hilo secundario con fallback de 1 s.
+    // Nunca bloquea el hilo de callbacks del NotificationListenerService.
     private fun manejarLlamadaEntrante(sbn: StatusBarNotification) {
-        val caller = obtenerNombreLlamante(sbn)
+        val claveLlamada = sbn.key
         val ahora = System.currentTimeMillis()
 
-        // ✅ Evitar anunciar la misma llamada múltiples veces
-        if (llamadasAnunciadas.contains(caller)) {
-            Log.d(TAG, "🔇 Llamada ya anunciada: $caller")
+        val ultimaVez = llamadasAnunciadas[claveLlamada]
+        if (ultimaVez != null && (ahora - ultimaVez) < 30_000L) {
+            Log.d(TAG, "🔇 Llamada ya anunciada: $claveLlamada")
             return
         }
 
-        // ✅ Evitar anuncios muy seguidos (menos de 3 segundos)
-        if (ahora - ultimaLlamadaAnunciada < 3000) {
-            Log.d(TAG, "⏱️ Anuncio muy reciente, esperando...")
-            return
+        llamadasAnunciadas[claveLlamada] = ahora
+        limpiarCacheLlamadas()
+
+        val extras = sbn.notification.extras
+        val valorBruto = extras.getCharSequence(Notification.EXTRA_TITLE)
+            ?.toString()?.takeIf { it.isNotBlank() }
+            ?: extras.getCharSequence(Notification.EXTRA_TEXT)
+                ?.toString()?.takeIf { it.isNotBlank() }
+            ?: "Número desconocido"
+
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val anunciado = AtomicBoolean(false)
+
+        // Fallback: si en 1 s no llega el nombre del contacto, anunciar con el valor bruto
+        val fallbackRunnable = Runnable {
+            if (anunciado.compareAndSet(false, true)) {
+                Log.d(TAG, "📞 [1s fallback] Llamada de: $valorBruto")
+                tts?.stop()
+                tts?.speak("Llamada entrante de $valorBruto", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
         }
+        mainHandler.postDelayed(fallbackRunnable, 1_000L)
 
-        // ✅ Anunciar la llamada UNA SOLA VEZ
-        llamadasAnunciadas.add(caller)
-        ultimaLlamadaAnunciada = ahora
-
-        val mensaje = "Llamada entrante de $caller"
-        Log.d(TAG, "📞 Anunciando: $mensaje")
-
-        // ✅ Detener cualquier TTS anterior y anunciar
-        tts?.stop()
-        tts?.speak(mensaje, TextToSpeech.QUEUE_FLUSH, null, null)
-
-        // ✅ Limpiar caché después de 30 segundos (por si no se elimina la notificación)
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            llamadasAnunciadas.remove(caller)
-        }, 30000)
+        // Hilo secundario: consulta ContactsContract sin bloquear
+        Thread {
+            val nombre = buscarNombreContacto(valorBruto)
+            mainHandler.post {
+                mainHandler.removeCallbacks(fallbackRunnable)
+                if (anunciado.compareAndSet(false, true)) {
+                    val callerName = nombre ?: valorBruto
+                    Log.d(TAG, "📞 [contacto] Llamada de: $callerName")
+                    tts?.stop()
+                    tts?.speak("Llamada entrante de $callerName", TextToSpeech.QUEUE_FLUSH, null, null)
+                }
+            }
+        }.start()
     }
 
-    // ✅ NUEVO: Obtener nombre de quien llama
-    private fun obtenerNombreLlamante(sbn: StatusBarNotification): String {
-        val notification = sbn.notification
+    private fun buscarNombreContacto(numeroPosible: String): String? {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) return null
 
-        // Intentar obtener el nombre del título
-        val titulo = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
-        if (!titulo.isNullOrEmpty()) {
-            return titulo
+        val soloDigitos = numeroPosible.replace(Regex("[\\s\\-\\+\\(\\)\\.#\\*]"), "")
+        if (soloDigitos.length < 4 || !soloDigitos.all { it.isDigit() }) return null
+
+        return try {
+            val uri = Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                Uri.encode(numeroPosible)
+            )
+            contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME),
+                null, null, null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error buscando contacto: ${e.message}")
+            null
         }
+    }
 
-        // Intentar obtener del texto
-        val texto = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-        if (!texto.isNullOrEmpty()) {
-            return texto
+    private fun limpiarCacheLlamadas() {
+        val ahora = System.currentTimeMillis()
+        val iter = llamadasAnunciadas.entries.iterator()
+        while (iter.hasNext()) {
+            if (ahora - iter.next().value > 60_000L) iter.remove()
         }
-
-        return "Número desconocido"
     }
 
     private fun leerNotificacion(appName: String, titulo: String, texto: String) {
@@ -208,24 +274,18 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             return
         }
 
-        // Obtener el prefijo configurado
         val prefs = getSharedPreferences("config_notificaciones", Context.MODE_PRIVATE)
         val tipoPrefijo = prefs.getString("prefijo_lectura", "notificacion") ?: "notificacion"
 
-        // Construir el mensaje según el prefijo
         val mensaje = buildString {
             when (tipoPrefijo) {
                 "notificacion" -> append("Notificación de $appName. ")
-                "mensaje" -> append("Mensaje de $appName. ")
-                "sin_prefijo" -> append("$appName. ")
+                "app_solo", "sin_prefijo", "mensaje" -> append("$appName. ")
+                "solo_mensaje" -> { /* sin prefijo ni nombre de app */ }
+                else -> append("Notificación de $appName. ")
             }
-
-            if (titulo.isNotEmpty()) {
-                append("$titulo. ")
-            }
-            if (texto.isNotEmpty() && texto != titulo) {
-                append(texto)
-            }
+            if (titulo.isNotEmpty()) append("$titulo. ")
+            if (texto.isNotEmpty() && texto != titulo) append(texto)
         }
 
         Log.d(TAG, "🔊 Leyendo: $mensaje")
@@ -237,9 +297,10 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         return prefs.getBoolean("lectura_automatica", false)
     }
 
-    private fun isAppPermitida(appName: String): Boolean {
-        val prefs = getSharedPreferences("apps_permitidas", Context.MODE_PRIVATE)
-        return prefs.getBoolean(appName, true) // Por defecto activadas
+    // CORRECCIÓN 3: clave = packageName en SharedPreferences "apps_seleccionadas"
+    private fun isAppPermitida(packageName: String): Boolean {
+        val prefs = getSharedPreferences("apps_seleccionadas", Context.MODE_PRIVATE)
+        return prefs.getBoolean(packageName, true)
     }
 
     fun getAppName(packageName: String): String {
@@ -247,7 +308,6 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             val appInfo = packageManager.getApplicationInfo(packageName, 0)
             packageManager.getApplicationLabel(appInfo).toString()
         } catch (e: Exception) {
-            // Si no se puede obtener el nombre, usar mapeo manual
             when (packageName) {
                 "com.whatsapp" -> "WhatsApp"
                 "com.instagram.android" -> "Instagram"
@@ -264,10 +324,13 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     override fun onDestroy() {
         super.onDestroy()
         instance = null
-        super.onDestroy()
+        // CORRECCIÓN 2: desregistrar el receiver al destruir el servicio
+        try { unregisterReceiver(screenOffReceiver) } catch (_: Exception) {}
         tts?.stop()
         tts?.shutdown()
         llamadasAnunciadas.clear()
+        ultimoTextoLeido.clear()
+        snapshotInicial.clear()
         Log.d(TAG, "🔚 Servicio de notificaciones destruido")
     }
 }

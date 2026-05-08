@@ -132,5 +132,10 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name=".EvaListeningService"
+            android:foregroundServiceType="microphone"
+            android:exported="false" />
+
     </application>
 </manifest>
