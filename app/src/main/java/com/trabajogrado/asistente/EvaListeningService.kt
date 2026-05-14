@@ -1,6 +1,7 @@
 package com.trabajogrado.asistente
 
 import android.app.Notification
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -13,11 +14,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
@@ -29,6 +33,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private val TAG = "EvaListeningService"
     private val CHANNEL_ID = "eva_listening_channel"
     private val NOTIF_ID = 1001
+    private val LAUNCH_NOTIF_ID = 1002
     private val PREFS_NAME = "EvaPreferences"
     private val KEY_EVA_ACTIVE = "eva_active"
 
@@ -206,7 +211,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
             comandoLower.contains("ayuda") -> {
                 responder("Puedo decirte la hora, la fecha, contarte chistes, abrir aplicaciones, leer notificaciones, o buscar en internet.")
             }
-            else -> responder("No entendí el comando: $comando")
+            else -> responder("No entendí")
         }
     }
 
@@ -232,26 +237,24 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun buscarClima() {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://www.google.com/search?q=${Uri.encode("clima Tuluá Colombia")}")).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            responder("Buscando el clima")
-        } catch (e: Exception) {
-            responder("No pude buscar el clima")
+        if (!estaDesbloqueado()) { responder("Primero desbloquea el teléfono"); return }
+        val intent = Intent(Intent.ACTION_VIEW,
+            Uri.parse("https://www.google.com/search?q=${Uri.encode("clima Tuluá Colombia")}")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        hablarYEjecutar("Buscando el clima") {
+            if (!lanzarActivity(intent)) mostrarNotificacionLanzamiento(intent)
         }
     }
 
     private fun buscarEnInternet(query: String) {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}")).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            responder("Buscando $query")
-        } catch (e: Exception) {
-            responder("No pude buscar")
+        if (!estaDesbloqueado()) { responder("Primero desbloquea el teléfono"); return }
+        val intent = Intent(Intent.ACTION_VIEW,
+            Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        hablarYEjecutar("Buscando $query") {
+            if (!lanzarActivity(intent)) mostrarNotificacionLanzamiento(intent)
         }
     }
 
@@ -269,45 +272,117 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     )
 
     private fun abrirAplicacion(nombreApp: String) {
+        if (!estaDesbloqueado()) { responder("Primero desbloquea el teléfono"); return }
         val nombreNorm = nombreApp.lowercase().trim()
+        val intent = resolverIntentApp(nombreNorm)
+        if (intent == null) { responder("No encontré $nombreApp"); return }
+        hablarYEjecutar("Abriendo $nombreApp") {
+            if (!lanzarActivity(intent)) mostrarNotificacionLanzamiento(intent)
+        }
+    }
+
+    // Resuelve el Intent sin lanzarlo. Devuelve null si la app no está instalada.
+    private fun resolverIntentApp(nombreNorm: String): Intent? {
         if (nombreNorm.contains("whats")) {
-            if (abrirConUri("whatsapp://send", "WhatsApp")) return
+            val i = Intent(Intent.ACTION_VIEW, Uri.parse("whatsapp://send")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (packageManager.resolveActivity(i, 0) != null) return i
         }
         if (nombreNorm.contains("tik")) {
-            if (abrirConUri("snssdk1128://", "TikTok")) return
-            if (abrirConUri("tiktok://", "TikTok")) return
-        }
-        val pkg = appPackages[nombreNorm]
-        if (pkg != null && abrirPackage(pkg, nombreApp)) return
-        val apps = packageManager.getInstalledApplications(0)
-        for (app in apps) {
-            if (packageManager.getLaunchIntentForPackage(app.packageName) == null) continue
-            val appName = packageManager.getApplicationLabel(app).toString().lowercase()
-            if (appName.contains(nombreNorm) || nombreNorm.contains(appName)) {
-                if (abrirPackage(app.packageName, nombreApp)) return
+            for (uri in listOf("snssdk1128://", "tiktok://")) {
+                val i = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                if (packageManager.resolveActivity(i, 0) != null) return i
             }
         }
-        responder("No encontré $nombreApp")
+        val pkg = appPackages[nombreNorm]
+        if (pkg != null) {
+            packageManager.getLaunchIntentForPackage(pkg)?.let {
+                return it.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            }
+        }
+        for (app in packageManager.getInstalledApplications(0)) {
+            val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName) ?: continue
+            val appName = packageManager.getApplicationLabel(app).toString().lowercase()
+            if (appName.contains(nombreNorm) || nombreNorm.contains(appName)) {
+                return launchIntent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            }
+        }
+        return null
     }
 
-    private fun abrirConUri(uri: String, nombre: String): Boolean {
-        return try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            responder("Abriendo $nombre")
-            true
-        } catch (e: Exception) { false }
+    /**
+     * Tres capas para lanzar desde segundo plano:
+     *  1. AccessibilityService — exento de background launch restrictions en Android 10+
+     *  2. Directo desde el Service — funciona en Android 10-11 (foreground service exemption)
+     *  3. LaunchBridgeActivity vía SYSTEM_ALERT_WINDOW — funciona en Android 12+ si el permiso está concedido
+     */
+    private fun lanzarActivity(intent: Intent): Boolean {
+        if (LecturaPantallaService.lanzarActividad(intent)) return true
+        try { startActivity(intent); return true } catch (e: Exception) {
+            Log.w(TAG, "Lanzamiento directo bloqueado: ${e.message}")
+        }
+        if (Settings.canDrawOverlays(this)) {
+            try {
+                startActivity(Intent(this, LaunchBridgeActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    putExtra(LaunchBridgeActivity.EXTRA_TARGET_INTENT, intent)
+                })
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Bridge launch falló: ${e.message}")
+            }
+        }
+        return false
     }
 
-    private fun abrirPackage(packageName: String, nombre: String): Boolean {
-        return try {
-            val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return false
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            responder("Abriendo $nombre")
-            true
-        } catch (e: Exception) { false }
+    // Habla la confirmación con TTS y ejecuta la acción DESPUÉS de que termina de hablar.
+    private fun hablarYEjecutar(mensaje: String, accion: () -> Unit) {
+        enviarBroadcast(respuesta = mensaje)
+        Log.d(TAG, "💬 $mensaje → acción después")
+        if (!ttsListo) { accion(); return }
+        val uid = "eva_${System.currentTimeMillis()}"
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId == uid) Handler(Looper.getMainLooper()).post { accion() }
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) {
+                if (utteranceId == uid) Handler(Looper.getMainLooper()).post { accion() }
+            }
+        })
+        val params = Bundle().apply { putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uid) }
+        tts?.speak(mensaje, TextToSpeech.QUEUE_FLUSH, params, uid)
+    }
+
+    // Notificación de alta prioridad como último recurso: el usuario la toca y la app se abre
+    // desde un contexto de primer plano (tap en notificación).
+    private fun mostrarNotificacionLanzamiento(intent: Intent) {
+        val pending = PendingIntent.getActivity(
+            this, System.currentTimeMillis().toInt(), intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+        getSystemService(NotificationManager::class.java).notify(
+            LAUNCH_NOTIF_ID,
+            androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("EVA")
+                .setContentText("Toca para continuar")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pending)
+                .setAutoCancel(true)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .build()
+        )
+        Log.d(TAG, "🔔 Notificación de lanzamiento mostrada")
+    }
+
+    private fun estaDesbloqueado(): Boolean {
+        val power = getSystemService(POWER_SERVICE) as PowerManager
+        val keyguard = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        return power.isInteractive && !keyguard.isKeyguardLocked
     }
 
     private fun responder(mensaje: String) {

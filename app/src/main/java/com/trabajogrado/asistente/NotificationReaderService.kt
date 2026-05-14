@@ -111,6 +111,9 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             val packageName = sbn.packageName
             val notification = sbn.notification
 
+            // Ignorar todas las notificaciones generadas por la propia app de EVA
+            if (packageName == applicationContext.packageName) return
+
             Log.d(TAG, "📬 Notificación de: $packageName | key: ${sbn.key}")
 
             if (esLlamadaEntrante(sbn)) {

@@ -90,6 +90,18 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             instance?.actualizarConfiguracionNotificaciones()
             Log.d("LecturaService", "🔄 Solicitada actualización de configuración de notificaciones")
         }
+
+        // El AccessibilityService está exento de las restricciones de lanzamiento desde segundo plano
+        // de Android 10+. Se usa como canal principal para abrir apps desde el EvaListeningService.
+        fun lanzarActividad(intent: Intent): Boolean {
+            val inst = instance ?: return false
+            return try {
+                inst.startActivity(intent)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
     }
 
     override fun onServiceConnected() {

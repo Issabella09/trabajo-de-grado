@@ -13,6 +13,7 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <queries>
         <package android:name="com.instagram.android" />
@@ -136,6 +137,13 @@
             android:name=".EvaListeningService"
             android:foregroundServiceType="microphone"
             android:exported="false" />
+
+        <activity
+            android:name=".LaunchBridgeActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
     </application>
 </manifest>
