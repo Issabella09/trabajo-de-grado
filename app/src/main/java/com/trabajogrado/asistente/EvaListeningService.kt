@@ -195,6 +195,32 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "CO"))
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
+            arrancarReconocedor(intent)
+        }
+    }
+
+    // Abre el micrófono solo cuando el TTS ya terminó de hablar.
+    // Si el TTS está activo, registra un UtteranceProgressListener y espera onDone;
+    // así el audio del altavoz nunca contamina la escucha del comando.
+    private fun arrancarReconocedor(intent: Intent) {
+        if (tts?.isSpeaking == true) {
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {}
+                override fun onDone(utteranceId: String?) {
+                    Handler(Looper.getMainLooper()).post {
+                        tts?.setOnUtteranceProgressListener(null)
+                        commandRecognizer?.startListening(intent)
+                    }
+                }
+                @Deprecated("Deprecated in Java")
+                override fun onError(utteranceId: String?) {
+                    Handler(Looper.getMainLooper()).post {
+                        tts?.setOnUtteranceProgressListener(null)
+                        commandRecognizer?.startListening(intent)
+                    }
+                }
+            })
+        } else {
             commandRecognizer?.startListening(intent)
         }
     }
