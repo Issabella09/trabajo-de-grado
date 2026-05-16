@@ -143,28 +143,26 @@ class VoskHotwordDetector(
         hotwordDetected = false
 
         try {
-            val recognizer = Recognizer(model, 16000.0f, "[\"eva\"]")
+            val recognizer = Recognizer(model, 16000.0f, "[\"hola eva\"]")
             speechService = SpeechService(recognizer, 16000.0f)
 
             speechService?.startListening(object : RecognitionListener {
-                override fun onPartialResult(hypothesis: String?) {
+                // No disparar en parciales: "hola" sola puede aparecer como parcial
+                // de "hola eva" y provocar un falso positivo antes de que el usuario
+                // termine de pronunciar la frase completa.
+                override fun onPartialResult(hypothesis: String?) {}
+
+                // Única fuente de verdad: resultado final del segmento de audio.
+                // Vosk solo entrega "hola eva" aquí si el usuario pronunció ambas palabras.
+                override fun onResult(hypothesis: String?) {
                     hypothesis?.let {
                         try {
-                            val json = JSONObject(it)
-                            val partial = json.optString("partial", "")
-
-                            if (partial.contains("eva", ignoreCase = true) && !hotwordDetected) {
-                                hotwordDetected = true  // ✅ Marcar como detectado
-
-                                Log.d(TAG, "🎯 HOTWORD DETECTADO: $partial")
-
-                                // ✅ Detener escucha
+                            val result = JSONObject(it).optString("text", "")
+                            if (result.contains("hola eva", ignoreCase = true) && !hotwordDetected) {
+                                hotwordDetected = true
+                                Log.d(TAG, "🎯 HOTWORD DETECTADO: $result")
                                 stopListening()
-
-                                // ✅ Notificar en UI thread
-                                Handler(Looper.getMainLooper()).post {
-                                    onHotwordDetected()
-                                }
+                                Handler(Looper.getMainLooper()).post { onHotwordDetected() }
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error parsing: ${e.message}")
@@ -172,7 +170,6 @@ class VoskHotwordDetector(
                     }
                 }
 
-                override fun onResult(hypothesis: String?) {}
                 override fun onFinalResult(hypothesis: String?) {}
 
                 override fun onError(e: Exception?) {
@@ -189,7 +186,7 @@ class VoskHotwordDetector(
             })
 
             isListening = true
-            Log.d(TAG, "👂 Escuchando hotword 'EVA'...")
+            Log.d(TAG, "👂 Escuchando hotword 'HOLA EVA'...")
 
         } catch (e: Exception) {
             Log.e(TAG, "Error iniciando escucha: ${e.message}")

@@ -22,7 +22,10 @@ import android.speech.SpeechRecognizer
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.graphics.PixelFormat
 import android.util.Log
+import android.view.View
+import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,16 +44,23 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var commandRecognizer: SpeechRecognizer? = null
     private var ttsListo = false
+    private var overlayView: View? = null
+    private var wmService: WindowManager? = null
 
     companion object {
         @Volatile
         var isRunning = false
             private set
+        @Volatile
+        var instance: EvaListeningService? = null
+        @Volatile
+        var pendingLaunchIntent: Intent? = null
 
         const val ACTION_UPDATE = "com.trabajogrado.asistente.EVA_UPDATE"
         const val EXTRA_ESTADO = "estado"
         const val EXTRA_COMANDO = "comando"
         const val EXTRA_RESPUESTA = "respuesta"
+        const val EXTRA_START_LISTENING = "start_listening"
 
         fun iniciar(context: Context) {
             val intent = Intent(context, EvaListeningService::class.java)
@@ -69,6 +79,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+        instance = this
         crearCanalNotificacion()
         startForeground(NOTIF_ID, crearNotificacion("Iniciando..."))
         tts = TextToSpeech(this, this)
@@ -81,6 +92,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
     override fun onDestroy() {
         isRunning = false
+        instance = null
+        removerOverlay()
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
             .edit().putBoolean(KEY_EVA_ACTIVE, false).apply()
         voskDetector?.cleanup()
@@ -108,8 +121,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         voskDetector?.initialize(
             onReady = {
                 voskDetector?.startListening()
-                enviarBroadcast(estado = "👂 Esperando 'EVA'...")
-                actualizarNotificacion("Escuchando 'EVA'...")
+                enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                actualizarNotificacion("Escuchando 'HOLA EVA'...")
                 Log.d(TAG, "✅ Vosk listo, escuchando")
             },
             onError = { error ->
@@ -120,11 +133,21 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun onHotwordDetected() {
-        Log.d(TAG, "🎯 EVA DETECTADO")
+        Log.d(TAG, "🎯 HOLA EVA DETECTADO")
         vibrar()
         enviarBroadcast(estado = "🎤 EVA activado, di tu comando...")
         actualizarNotificacion("EVA activado")
-        Handler(Looper.getMainLooper()).postDelayed({ iniciarEscuchaComando() }, 500)
+
+        if (!AsistenteVozNuevoActivity.isInForeground) {
+            val intent = Intent(this, AsistenteVozNuevoActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                putExtra(EXTRA_START_LISTENING, true)
+            }
+            lanzarConOverlay(intent)
+            Handler(Looper.getMainLooper()).postDelayed({ iniciarEscuchaComando() }, 1200)
+        } else {
+            Handler(Looper.getMainLooper()).postDelayed({ iniciarEscuchaComando() }, 500)
+        }
     }
 
     private fun iniciarEscuchaComando() {
@@ -140,11 +163,11 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
                 override fun onError(error: Int) {
                     Log.e(TAG, "❌ Error SpeechRecognizer: $error")
-                    enviarBroadcast(estado = "No te entendí, di 'EVA' de nuevo")
+                    enviarBroadcast(estado = "No te entendí, di 'HOLA EVA' de nuevo")
                     Handler(Looper.getMainLooper()).postDelayed({
                         voskDetector?.startListening()
-                        enviarBroadcast(estado = "👂 Esperando 'EVA'...")
-                        actualizarNotificacion("Escuchando 'EVA'...")
+                        enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                        actualizarNotificacion("Escuchando 'HOLA EVA'...")
                     }, 2000)
                 }
 
@@ -157,8 +180,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                         procesarComando(comando)
                         Handler(Looper.getMainLooper()).postDelayed({
                             voskDetector?.startListening()
-                            enviarBroadcast(estado = "👂 Esperando 'EVA'...")
-                            actualizarNotificacion("Escuchando 'EVA'...")
+                            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                            actualizarNotificacion("Escuchando 'HOLA EVA'...")
                         }, 3000)
                     }
                 }
@@ -316,8 +339,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     /**
      * Tres capas para lanzar desde segundo plano:
      *  1. AccessibilityService — exento de background launch restrictions en Android 10+
-     *  2. Directo desde el Service — funciona en Android 10-11 (foreground service exemption)
-     *  3. LaunchBridgeActivity vía SYSTEM_ALERT_WINDOW — funciona en Android 12+ si el permiso está concedido
+     *  2. Directo desde el Service — funciona en algunos dispositivos (foreground service exemption)
+     *  3. OverlayLauncherActivity vía WindowManager TYPE_APPLICATION_OVERLAY (MIUI y Android 12+)
      */
     private fun lanzarActivity(intent: Intent): Boolean {
         if (LecturaPantallaService.lanzarActividad(intent)) return true
@@ -325,15 +348,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
             Log.w(TAG, "Lanzamiento directo bloqueado: ${e.message}")
         }
         if (Settings.canDrawOverlays(this)) {
-            try {
-                startActivity(Intent(this, LaunchBridgeActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra(LaunchBridgeActivity.EXTRA_TARGET_INTENT, intent)
-                })
-                return true
-            } catch (e: Exception) {
-                Log.e(TAG, "Bridge launch falló: ${e.message}")
-            }
+            lanzarConOverlay(intent)
+            return true
         }
         return false
     }
@@ -377,6 +393,60 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 .build()
         )
         Log.d(TAG, "🔔 Notificación de lanzamiento mostrada")
+    }
+
+    // Añade una View 1×1 invisible con TYPE_APPLICATION_OVERLAY. En MIUI, tener un overlay
+    // activo hace que el sistema trate el proceso como visible y permita startActivity().
+    @Suppress("DEPRECATION")
+    internal fun mostrarOverlay() {
+        if (!Settings.canDrawOverlays(this) || overlayView != null) return
+        try {
+            wmService = getSystemService(WINDOW_SERVICE) as WindowManager
+            overlayView = View(this)
+            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+            val params = WindowManager.LayoutParams(
+                1, 1, type,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT
+            )
+            wmService?.addView(overlayView, params)
+            Log.d(TAG, "🪟 Overlay añadido")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error añadiendo overlay: ${e.message}")
+        }
+    }
+
+    internal fun removerOverlay() {
+        try {
+            overlayView?.let { wmService?.removeView(it) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error removiendo overlay: ${e.message}")
+        } finally {
+            overlayView = null
+        }
+    }
+
+    // Muestra el overlay y lanza OverlayLauncherActivity, que desde su contexto de Activity
+    // puede abrir cualquier intent sin restricciones de background launch.
+    private fun lanzarConOverlay(intent: Intent) {
+        mostrarOverlay()
+        pendingLaunchIntent = intent
+        try {
+            startActivity(Intent(this, OverlayLauncherActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            Log.d(TAG, "🚀 OverlayLauncherActivity lanzada")
+            // Limpieza de seguridad si OverlayLauncherActivity no llega a ejecutar onDestroy
+            Handler(Looper.getMainLooper()).postDelayed({ removerOverlay() }, 3000)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ OverlayLauncher falló: ${e.message}")
+            removerOverlay()
+            pendingLaunchIntent = null
+        }
     }
 
     private fun estaDesbloqueado(): Boolean {
@@ -425,15 +495,16 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
     private fun crearCanalNotificacion() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "EVA Asistente de Voz",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "EVA está escuchando en segundo plano"
-                setShowBadge(false)
-            }
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "EVA Asistente de Voz",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = "EVA está escuchando en segundo plano"
+                    setShowBadge(false)
+                }
+            )
         }
     }
 

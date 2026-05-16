@@ -4,8 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
@@ -14,6 +16,12 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 
 class AsistenteVozNuevoActivity : AppCompatActivity() {
+
+    companion object {
+        @Volatile
+        var isInForeground: Boolean = false
+            private set
+    }
 
     private val TAG = "AsistenteVozNuevo"
     private val PREFS_NAME = "EvaPreferences"
@@ -45,8 +53,18 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         inicializarVistas()
     }
 
+    // Llamado cuando la Activity ya está en el stack y se trae al frente (launchMode singleTop).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EvaListeningService.EXTRA_START_LISTENING, false)) {
+            tvEstadoEva.text = "🎤 EVA activado, di tu comando..."
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        isInForeground = true
 
         ContextCompat.registerReceiver(
             this, updateReceiver,
@@ -67,14 +85,23 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         switchEva.isChecked = EvaListeningService.isRunning || prefsActivo
         configurarSwitch()
 
-        tvEstadoEva.text = if (EvaListeningService.isRunning)
-            "👂 Esperando 'EVA'..."
-        else
-            "Di 'EVA' seguido de tu comando"
+        // Si la Activity fue lanzada por detección del hotword desde segundo plano,
+        // mostrar estado "escuchando" en lugar del estado de espera normal.
+        val startListening = intent.getBooleanExtra(EvaListeningService.EXTRA_START_LISTENING, false)
+        if (startListening) {
+            tvEstadoEva.text = "🎤 EVA activado, di tu comando..."
+            intent.removeExtra(EvaListeningService.EXTRA_START_LISTENING)
+        } else {
+            tvEstadoEva.text = if (EvaListeningService.isRunning)
+                "👂 Esperando 'HOLA EVA'..."
+            else
+                "Di 'HOLA EVA' seguido de tu comando"
+        }
     }
 
     override fun onPause() {
         super.onPause()
+        isInForeground = false
         try { unregisterReceiver(updateReceiver) } catch (e: Exception) {}
     }
 
@@ -96,6 +123,21 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
             != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQUEST_RECORD_AUDIO)
+            switchEva.isChecked = false
+            return
+        }
+        // SYSTEM_ALERT_WINDOW es obligatorio en MIUI para lanzar la app desde segundo plano.
+        // Sin este permiso, el overlay no puede mostrarse y MIUI bloquea el Intent.
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(
+                this,
+                "EVA necesita el permiso 'Aparecer encima de otras apps' para funcionar desde segundo plano. Actívalo y vuelve a activar EVA.",
+                Toast.LENGTH_LONG
+            ).show()
+            startActivity(Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            ))
             switchEva.isChecked = false
             return
         }
