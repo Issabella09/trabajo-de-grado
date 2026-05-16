@@ -188,7 +188,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         return false
     }
 
-    // CORRECCIÓN 1: búsqueda de contacto en hilo secundario con fallback de 1 s.
+    // Búsqueda de contacto en hilo secundario con fallback de 1500 ms.
     // Nunca bloquea el hilo de callbacks del NotificationListenerService.
     private fun manejarLlamadaEntrante(sbn: StatusBarNotification) {
         val claveLlamada = sbn.key
@@ -204,35 +204,49 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         limpiarCacheLlamadas()
 
         val extras = sbn.notification.extras
+        // valorBruto puede ser vacío si la notificación no trae título ni texto
         val valorBruto = extras.getCharSequence(Notification.EXTRA_TITLE)
             ?.toString()?.takeIf { it.isNotBlank() }
             ?: extras.getCharSequence(Notification.EXTRA_TEXT)
                 ?.toString()?.takeIf { it.isNotBlank() }
-            ?: "Número desconocido"
+            ?: ""
+
+        // Centraliza el speak para que el check de ttsListo y el utteranceId
+        // estén siempre presentes, sin importar desde qué rama se llame.
+        fun anunciarLlamada(nombre: String) {
+            if (!ttsListo) {
+                Log.e(TAG, "❌ TTS no listo, no se puede anunciar la llamada")
+                return
+            }
+            val texto = if (nombre.isNotBlank()) "Llamada entrante de $nombre"
+                        else "Llamada de número desconocido"
+            val uid = "llamada_${System.currentTimeMillis()}"
+            Log.d(TAG, "📞 Anunciando: $texto")
+            tts?.stop()
+            tts?.speak(texto, TextToSpeech.QUEUE_FLUSH, null, uid)
+        }
 
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         val anunciado = AtomicBoolean(false)
 
-        // Fallback: si en 1 s no llega el nombre del contacto, anunciar con el valor bruto
+        // Fallback a 1500 ms: si el hilo de contacto no respondió, anuncia con valorBruto
         val fallbackRunnable = Runnable {
             if (anunciado.compareAndSet(false, true)) {
-                Log.d(TAG, "📞 [1s fallback] Llamada de: $valorBruto")
-                tts?.stop()
-                tts?.speak("Llamada entrante de $valorBruto", TextToSpeech.QUEUE_FLUSH, null, null)
+                Log.d(TAG, "📞 [1.5 s fallback] valorBruto='$valorBruto'")
+                anunciarLlamada(valorBruto)
             }
         }
-        mainHandler.postDelayed(fallbackRunnable, 1_000L)
+        mainHandler.postDelayed(fallbackRunnable, 1_500L)
 
-        // Hilo secundario: consulta ContactsContract sin bloquear
+        // Hilo secundario: consulta ContactsContract con Dispatchers.IO equivalente
         Thread {
             val nombre = buscarNombreContacto(valorBruto)
             mainHandler.post {
                 mainHandler.removeCallbacks(fallbackRunnable)
                 if (anunciado.compareAndSet(false, true)) {
-                    val callerName = nombre ?: valorBruto
-                    Log.d(TAG, "📞 [contacto] Llamada de: $callerName")
-                    tts?.stop()
-                    tts?.speak("Llamada entrante de $callerName", TextToSpeech.QUEUE_FLUSH, null, null)
+                    val callerName = nombre?.takeIf { it.isNotBlank() } ?: valorBruto
+                    Log.d(TAG, "📞 [contacto] callerName='$callerName'")
+                    anunciarLlamada(callerName)
                 }
             }
         }.start()
@@ -292,7 +306,45 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         }
 
         Log.d(TAG, "🔊 Leyendo: $mensaje")
-        tts?.speak(mensaje, TextToSpeech.QUEUE_ADD, null, null)
+        hablarEnFragmentos(mensaje)
+    }
+
+    // Habla un texto de cualquier longitud respetando el límite del motor TTS (~4000 chars).
+    // El primer fragmento usa [primerModo] (QUEUE_FLUSH o QUEUE_ADD); los siguientes QUEUE_ADD.
+    private fun hablarEnFragmentos(texto: String, primerModo: Int = TextToSpeech.QUEUE_ADD) {
+        if (!ttsListo || texto.isBlank()) return
+        val maxChars = 3500
+        if (texto.length <= maxChars) {
+            tts?.speak(texto, primerModo, null, "msg_${System.currentTimeMillis()}")
+            return
+        }
+        dividirTexto(texto, maxChars).forEachIndexed { i, fragmento ->
+            val modo = if (i == 0) primerModo else TextToSpeech.QUEUE_ADD
+            tts?.speak(fragmento, modo, null, "msg_part_$i")
+        }
+    }
+
+    // Divide un texto largo en fragmentos de hasta [maxChars] caracteres.
+    // Prioriza cortar en ". ", luego en "\n", luego en el último espacio.
+    private fun dividirTexto(texto: String, maxChars: Int): List<String> {
+        val result = mutableListOf<String>()
+        var pos = 0
+        while (pos < texto.length) {
+            if (texto.length - pos <= maxChars) {
+                result.add(texto.substring(pos).trim())
+                break
+            }
+            val segmento = texto.substring(pos, pos + maxChars)
+            val mitad = maxChars / 2
+            val corteLocal = segmento.lastIndexOf(". ").takeIf { it > mitad }?.plus(2)
+                ?: segmento.lastIndexOf('\n').takeIf { it > mitad }?.plus(1)
+                ?: segmento.lastIndexOf(' ').takeIf { it > mitad }
+                ?: maxChars
+            result.add(texto.substring(pos, pos + corteLocal).trim())
+            pos += corteLocal
+            while (pos < texto.length && texto[pos] == ' ') pos++
+        }
+        return result.filter { it.isNotEmpty() }
     }
 
     private fun isLecturaAutomaticaActivada(): Boolean {

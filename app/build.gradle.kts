@@ -74,10 +74,9 @@ dependencies {
 
     // Vosk para detección de palabra clave offline
 
-    // ML Kit Text Recognition
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
-    // ML Kit Cercanía
-    implementation("com.google.mlkit:image-labeling:17.0.7")
+    // ML Kit — todas bundled (com.google.mlkit:*) para evitar conflictos de versión con mlkit:common
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:image-labeling:17.0.9")
 
     // ✅ Vosk para hotword detection (JNA ya incluido)
     implementation("com.alphacephei:vosk-android:0.3.47")
