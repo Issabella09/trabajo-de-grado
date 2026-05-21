@@ -102,6 +102,10 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 false
             }
         }
+
+        fun clicarBotonEnviar(packageDestino: String) {
+            instance?.buscarYClicarBotonEnviar(packageDestino)
+        }
     }
 
     override fun onServiceConnected() {
@@ -546,6 +550,34 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         if (texto.isNotBlank()) {
             textToSpeech.speak(texto, TextToSpeech.QUEUE_FLUSH, null, null)
         }
+    }
+
+    private fun buscarYClicarBotonEnviar(packageDestino: String) {
+        try {
+            val raiz = rootInActiveWindow ?: return
+            if (raiz.packageName?.toString() != packageDestino) return
+            encontrarBotonEnviar(raiz)?.performAction(
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
+            )
+            Log.d(TAG, "✅ Botón enviar clicado en $packageDestino")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clicando botón enviar: ${e.message}")
+        }
+    }
+
+    private fun encontrarBotonEnviar(nodo: android.view.accessibility.AccessibilityNodeInfo): android.view.accessibility.AccessibilityNodeInfo? {
+        val desc = nodo.contentDescription?.toString()?.lowercase() ?: ""
+        val texto = nodo.text?.toString()?.lowercase() ?: ""
+        if (nodo.isClickable && (desc.contains("enviar") || desc.contains("send") ||
+                texto.contains("enviar") || texto.contains("send"))) {
+            return nodo
+        }
+        for (i in 0 until nodo.childCount) {
+            val hijo = nodo.getChild(i) ?: continue
+            val resultado = encontrarBotonEnviar(hijo)
+            if (resultado != null) return resultado
+        }
+        return null
     }
 
 }

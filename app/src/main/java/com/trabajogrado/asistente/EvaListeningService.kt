@@ -22,7 +22,9 @@ import android.speech.SpeechRecognizer
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.content.pm.PackageManager
 import android.graphics.PixelFormat
+import android.provider.ContactsContract
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -30,6 +32,15 @@ import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+enum class ConversationState { IDLE, ESPERANDO_CONTACTO, ESPERANDO_MENSAJE, ESPERANDO_CONFIRMACION }
+
+data class MensajePendiente(
+    val app: String,
+    val contacto: String,
+    val numero: String,
+    var texto: String = ""
+)
 
 class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
@@ -46,6 +57,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private var ttsListo = false
     private var overlayView: View? = null
     private var wmService: WindowManager? = null
+    private var conversationState = ConversationState.IDLE
+    private var mensajePendiente: MensajePendiente? = null
 
     companion object {
         @Volatile
@@ -94,6 +107,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         isRunning = false
         instance = null
         removerOverlay()
+        conversationState = ConversationState.IDLE
+        mensajePendiente = null
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
             .edit().putBoolean(KEY_EVA_ACTIVE, false).apply()
         voskDetector?.cleanup()
@@ -163,12 +178,16 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
                 override fun onError(error: Int) {
                     Log.e(TAG, "❌ Error SpeechRecognizer: $error")
-                    enviarBroadcast(estado = "No te entendí, di 'HOLA EVA' de nuevo")
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        voskDetector?.startListening()
-                        enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
-                        actualizarNotificacion("Escuchando 'HOLA EVA'...")
-                    }, 2000)
+                    if (conversationState != ConversationState.IDLE) {
+                        hablarYEscuchar("No te escuché bien. Intenta de nuevo.")
+                    } else {
+                        enviarBroadcast(estado = "No te entendí, di 'HOLA EVA' de nuevo")
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            voskDetector?.startListening()
+                            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                            actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                        }, 2000)
+                    }
                 }
 
                 override fun onResults(results: Bundle?) {
@@ -177,12 +196,16 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                         val comando = matches[0]
                         Log.d(TAG, "✅ COMANDO: $comando")
                         enviarBroadcast(estado = "Procesando...", comando = "EVA: $comando")
-                        procesarComando(comando)
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            voskDetector?.startListening()
-                            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
-                            actualizarNotificacion("Escuchando 'HOLA EVA'...")
-                        }, 3000)
+                        if (conversationState != ConversationState.IDLE) {
+                            procesarConversacion(comando)
+                        } else {
+                            procesarComando(comando)
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                voskDetector?.startListening()
+                                enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                                actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                            }, 3000)
+                        }
                     }
                 }
 
@@ -227,6 +250,14 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
     private fun procesarComando(comando: String) {
         val comandoLower = comando.lowercase()
+
+        val msgInfo = detectarComandoMensaje(comandoLower)
+        if (msgInfo != null) {
+            val (appKey, appNombre, contacto) = msgInfo
+            iniciarFlujoMensaje(appKey, appNombre, contacto)
+            return
+        }
+
         when {
             comandoLower.contains("notificacion") || comandoLower.contains("notificaciones") -> {
                 val service = NotificationReaderService.instance
@@ -258,7 +289,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 else responder("¿Qué quieres buscar?")
             }
             comandoLower.contains("ayuda") -> {
-                responder("Puedo decirte la hora, la fecha, contarte chistes, abrir aplicaciones, leer notificaciones, o buscar en internet.")
+                responder("Puedo decirte la hora, la fecha, contarte chistes, abrir aplicaciones, leer notificaciones, buscar en internet, o enviar mensajes por WhatsApp, Telegram o SMS.")
             }
             else -> responder("No entendí")
         }
@@ -555,5 +586,247 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private fun actualizarNotificacion(texto: String) {
         getSystemService(NotificationManager::class.java)
             .notify(NOTIF_ID, crearNotificacion(texto))
+    }
+
+    // ── Conversational flow ────────────────────────────────────────────────────
+
+    private fun procesarConversacion(texto: String) {
+        val textoLower = texto.lowercase().trim()
+        when (conversationState) {
+            ConversationState.ESPERANDO_CONTACTO -> {
+                val pendiente = mensajePendiente ?: run { volverAEsperarHotword(0); return }
+                val nombreContacto = texto.trim()
+                enviarBroadcast(estado = "Buscando contacto...")
+                Thread {
+                    val numero = buscarNumeroContacto(nombreContacto)
+                    Handler(Looper.getMainLooper()).post {
+                        if (numero == null) {
+                            hablarYEscuchar("No encontré a $nombreContacto en tu agenda. ¿A quién le quieres enviar el mensaje?")
+                        } else {
+                            mensajePendiente = pendiente.copy(contacto = nombreContacto, numero = numero)
+                            conversationState = ConversationState.ESPERANDO_MENSAJE
+                            hablarYEscuchar("¿Cuál es el mensaje?")
+                        }
+                    }
+                }.start()
+            }
+            ConversationState.ESPERANDO_MENSAJE -> {
+                val pendiente = mensajePendiente ?: run { volverAEsperarHotword(0); return }
+                pendiente.texto = texto
+                conversationState = ConversationState.ESPERANDO_CONFIRMACION
+                hablarYEscuchar("El mensaje es: \"$texto\". ¿Deseas enviarlo? Di sí o no.")
+            }
+            ConversationState.ESPERANDO_CONFIRMACION -> {
+                when {
+                    textoLower.contains("si") || textoLower.contains("sí") ||
+                    textoLower.contains("enviar") || textoLower.contains("confirmar") ||
+                    textoLower.contains("ok") -> enviarMensaje()
+                    textoLower.contains("no") || textoLower.contains("cancelar") ||
+                    textoLower.contains("cancel") -> {
+                        mensajePendiente = null
+                        conversationState = ConversationState.IDLE
+                        responder("Mensaje cancelado.")
+                        Handler(Looper.getMainLooper()).postDelayed({ volverAEsperarHotword(0) }, 2000)
+                    }
+                    else -> hablarYEscuchar("No entendí. ¿Deseas enviar el mensaje? Di sí o no.")
+                }
+            }
+            ConversationState.IDLE -> {
+                procesarComando(texto)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    voskDetector?.startListening()
+                    enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                    actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                }, 3000)
+            }
+        }
+    }
+
+    // Speaks [mensaje] then immediately re-opens the mic for the next conversational turn.
+    private fun hablarYEscuchar(mensaje: String) {
+        enviarBroadcast(respuesta = mensaje)
+        if (!ttsListo) { iniciarEscuchaComando(); return }
+        val uid = "eva_conv_${System.currentTimeMillis()}"
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId == uid) Handler(Looper.getMainLooper()).post {
+                    tts?.setOnUtteranceProgressListener(null)
+                    iniciarEscuchaComando()
+                }
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) {
+                if (utteranceId == uid) Handler(Looper.getMainLooper()).post {
+                    tts?.setOnUtteranceProgressListener(null)
+                    iniciarEscuchaComando()
+                }
+            }
+        })
+        tts?.speak(mensaje, TextToSpeech.QUEUE_FLUSH, null, uid)
+    }
+
+    private fun volverAEsperarHotword(delayMs: Long = 2000) {
+        conversationState = ConversationState.IDLE
+        mensajePendiente = null
+        Handler(Looper.getMainLooper()).postDelayed({
+            voskDetector?.startListening()
+            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+            actualizarNotificacion("Escuchando 'HOLA EVA'...")
+        }, delayMs)
+    }
+
+    // Returns Triple(appKey, appNombre, contacto?) or null if not a messaging command.
+    // contacto is null when the command has no "a [name]" part — EVA will ask the user.
+    private fun detectarComandoMensaje(comandoLower: String): Triple<String, String, String?>? {
+        // Verbs without tildes (SpeechRecognizer may strip them)
+        val verbos = listOf("enviar", "envia", "manda", "escribele", "escribirle", "mandar", "escribe")
+        val tieneVerbo = verbos.any { comandoLower.contains(it) }
+        val tieneFraseMensaje = comandoLower.contains("mensaje a ") || comandoLower.contains("mensaje para ")
+        if (!tieneVerbo && !tieneFraseMensaje) return null
+
+        // Must also mention a channel or the word "mensaje" to avoid false positives on
+        // commands like "escribe una nota" that don't involve messaging apps
+        val indicadores = listOf("mensaje", "whatsapp", "telegram", "sms", "texto")
+        if (indicadores.none { comandoLower.contains(it) }) return null
+
+        val appKey: String
+        val appNombre: String
+        when {
+            comandoLower.contains("telegram") -> { appKey = "telegram"; appNombre = "Telegram" }
+            comandoLower.contains("sms") ||
+            (comandoLower.contains("mensaje de texto") && !comandoLower.contains("whatsapp")) -> {
+                appKey = "sms"; appNombre = "SMS"
+            }
+            else -> { appKey = "whatsapp"; appNombre = "WhatsApp" }
+        }
+
+        // Extract contact: text after "a ", "al ", or "para " trimmed of app keywords
+        val regexA = Regex("\\b(?:a|al|para)\\s+([\\wáéíóúñüÁÉÍÓÚÑÜ][\\wáéíóúñüÁÉÍÓÚÑÜ\\s]*?)(?:\\s+(?:por|en|desde|con|a través|usando)|$)")
+        val match = regexA.find(comandoLower)
+        var contacto: String? = match?.groupValues?.get(1)?.trim()
+
+        if (contacto != null) {
+            for (kw in listOf("whatsapp", "telegram", "sms", "mensaje", "texto", "por", "en")) {
+                contacto = contacto!!.replace(kw, "").trim()
+            }
+            contacto = contacto!!.trimEnd(',', '.', '?', '!')
+            if (contacto!!.isBlank()) contacto = null
+        }
+
+        return Triple(appKey, appNombre, contacto)
+    }
+
+    private fun iniciarFlujoMensaje(appKey: String, appNombre: String, contacto: String?) {
+        if (contacto.isNullOrBlank()) {
+            mensajePendiente = MensajePendiente(app = appKey, contacto = "", numero = "")
+            conversationState = ConversationState.ESPERANDO_CONTACTO
+            hablarYEscuchar("¿A quién le quieres enviar el mensaje?")
+            return
+        }
+        enviarBroadcast(estado = "Buscando contacto...")
+        Thread {
+            val numero = buscarNumeroContacto(contacto)
+            Handler(Looper.getMainLooper()).post {
+                if (numero == null) {
+                    conversationState = ConversationState.IDLE
+                    responder("No encontré el contacto $contacto en tu agenda.")
+                    Handler(Looper.getMainLooper()).postDelayed({ volverAEsperarHotword(0) }, 3000)
+                } else {
+                    mensajePendiente = MensajePendiente(app = appKey, contacto = contacto, numero = numero)
+                    conversationState = ConversationState.ESPERANDO_MENSAJE
+                    hablarYEscuchar("¿Cuál es el mensaje?")
+                }
+            }
+        }.start()
+    }
+
+    private fun enviarMensaje() {
+        val pendiente = mensajePendiente ?: run { volverAEsperarHotword(0); return }
+        val intent = when (pendiente.app) {
+            "telegram" -> construirIntentTelegram(pendiente.numero, pendiente.texto)
+            "sms" -> construirIntentSms(pendiente.numero, pendiente.texto)
+            else -> construirIntentWhatsApp(pendiente.numero, pendiente.texto)
+        }
+        val appNombre = when (pendiente.app) {
+            "telegram" -> "Telegram"
+            "sms" -> "Mensajes"
+            else -> "WhatsApp"
+        }
+        val pkgDestino = when (pendiente.app) {
+            "telegram" -> "org.telegram.messenger"
+            "sms" -> "com.android.messaging"
+            else -> "com.whatsapp"
+        }
+        val nombreContacto = pendiente.contacto
+        conversationState = ConversationState.IDLE
+        mensajePendiente = null
+
+        hablarYEjecutar("Enviando mensaje a $nombreContacto por $appNombre") {
+            if (!lanzarActivity(intent)) mostrarNotificacionLanzamiento(intent)
+            Handler(Looper.getMainLooper()).postDelayed({
+                LecturaPantallaService.clicarBotonEnviar(pkgDestino)
+            }, 2500)
+            Handler(Looper.getMainLooper()).postDelayed({ volverAEsperarHotword(0) }, 5000)
+        }
+    }
+
+    private fun construirIntentWhatsApp(numero: String, texto: String): Intent {
+        val numLimpio = normalizarNumeroInternacional(numero)
+        return Intent(Intent.ACTION_VIEW,
+            Uri.parse("https://wa.me/$numLimpio?text=${Uri.encode(texto)}")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            setPackage("com.whatsapp")
+        }
+    }
+
+    private fun construirIntentTelegram(numero: String, texto: String): Intent {
+        return Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, texto)
+            setPackage("org.telegram.messenger")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    private fun construirIntentSms(numero: String, texto: String): Intent {
+        return Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$numero")).apply {
+            putExtra("sms_body", texto)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    private fun normalizarNumeroInternacional(numero: String): String {
+        val soloDigitos = numero.replace(Regex("[^0-9+]"), "")
+        return when {
+            soloDigitos.startsWith("+") -> soloDigitos.removePrefix("+")
+            soloDigitos.length == 10 -> "57$soloDigitos"
+            soloDigitos.startsWith("0") -> "57${soloDigitos.removePrefix("0")}"
+            else -> soloDigitos
+        }
+    }
+
+    private fun buscarNumeroContacto(nombre: String): String? {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) return null
+        return try {
+            contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                ),
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
+                arrayOf("%$nombre%"),
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst())
+                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                else null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error buscando número de contacto: ${e.message}")
+            null
+        }
     }
 }
