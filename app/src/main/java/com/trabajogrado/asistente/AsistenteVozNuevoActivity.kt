@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class AsistenteVozNuevoActivity : AppCompatActivity() {
@@ -27,6 +28,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
     private val PREFS_NAME = "EvaPreferences"
     private val KEY_EVA_ACTIVE = "eva_active"
     private val REQUEST_RECORD_AUDIO = 1
+    private val REQUEST_CONTACTS = 2
 
     private lateinit var tvUltimoComando: TextView
     private lateinit var tvRespuesta: TextView
@@ -51,6 +53,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_asistente_voz_nuevo)
         inicializarVistas()
+        solicitarPermisoContactos()
     }
 
     // Llamado cuando la Activity ya está en el stack y se trae al frente (launchMode singleTop).
@@ -158,19 +161,40 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         Log.d(TAG, "🔇 EVA desactivado")
     }
 
+    private fun solicitarPermisoContactos() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.READ_CONTACTS),
+                REQUEST_CONTACTS
+            )
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_RECORD_AUDIO) {
-            if (grantResults.isNotEmpty() &&
-                grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                switchEva.isChecked = true
-            } else {
-                Toast.makeText(this, "Necesitas dar permiso de micrófono", Toast.LENGTH_LONG).show()
+        when (requestCode) {
+            REQUEST_RECORD_AUDIO -> {
+                if (grantResults.isNotEmpty() &&
+                    grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    switchEva.isChecked = true
+                } else {
+                    Toast.makeText(this, "Necesitas dar permiso de micrófono", Toast.LENGTH_LONG).show()
+                }
+            }
+            REQUEST_CONTACTS -> {
+                if (grantResults.isEmpty() ||
+                    grantResults[0] != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    Toast.makeText(this, "Sin permiso de contactos EVA no podrá enviar mensajes", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

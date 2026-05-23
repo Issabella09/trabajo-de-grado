@@ -58,6 +58,9 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         private var lecturaActiva: Boolean = false
         private var instance: LecturaPantallaService? = null
 
+        @Volatile
+        var pendingAutoSend: Boolean = false
+
         fun activarLecturaDesdeExterno(nivel: Int = 1) {
             nivelLectura = nivel
             lecturaActiva = true
@@ -280,6 +283,13 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // Auto-send independiente de lecturaActiva: se ejecuta siempre que EVA espere enviar
+        if (pendingAutoSend &&
+            event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            event.packageName?.toString() == "com.whatsapp") {
+            intentarAutoEnviarWhatsApp()
+        }
+
         if (!Companion.lecturaActiva) return  // ← CAMBIA: lecturaActiva → Companion.lecturaActiva
 
         event?.let {
@@ -550,6 +560,46 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         if (texto.isNotBlank()) {
             textToSpeech.speak(texto, TextToSpeech.QUEUE_FLUSH, null, null)
         }
+    }
+
+    private fun intentarAutoEnviarWhatsApp() {
+        try {
+            val raiz = rootInActiveWindow ?: return
+            if (raiz.packageName?.toString() != "com.whatsapp") return
+
+            // 1. Buscar por view ID "send"
+            val porId = raiz.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
+                ?.takeIf { it.isNotEmpty() }
+                ?: raiz.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send_container")
+                    ?.takeIf { it.isNotEmpty() }
+
+            val boton = porId?.firstOrNull { it.isClickable }
+                ?: encontrarImageButtonEnWhatsApp(raiz)  // 2. Fallback: ImageButton clickable
+
+            if (boton != null) {
+                boton.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                pendingAutoSend = false
+                Log.d("EVA_WA", "Auto-send ejecutado")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en auto-send WhatsApp: ${e.message}")
+        }
+    }
+
+    // Recorre el árbol buscando un ImageButton clickable (botón de enviar de WhatsApp).
+    private fun encontrarImageButtonEnWhatsApp(
+        nodo: android.view.accessibility.AccessibilityNodeInfo
+    ): android.view.accessibility.AccessibilityNodeInfo? {
+        if (nodo.isClickable && nodo.className?.toString() == "android.widget.ImageButton") {
+            val desc = nodo.contentDescription?.toString()?.lowercase() ?: ""
+            if (desc.contains("enviar") || desc.contains("send") || desc.isBlank()) return nodo
+        }
+        for (i in 0 until nodo.childCount) {
+            val hijo = nodo.getChild(i) ?: continue
+            val resultado = encontrarImageButtonEnWhatsApp(hijo)
+            if (resultado != null) return resultado
+        }
+        return null
     }
 
     private fun buscarYClicarBotonEnviar(packageDestino: String) {
