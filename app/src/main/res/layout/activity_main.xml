@@ -251,7 +251,7 @@
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    app:srcCompat="@drawable/ic_screen"
+                    app:srcCompat="@drawable/ic_camera_describe"
                     app:tint="@color/naranja_primario"
                     android:layout_marginEnd="14dp" />
 

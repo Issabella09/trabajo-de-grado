@@ -51,6 +51,8 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private var overlayView: View? = null
     private var wmService: WindowManager? = null
     private var conversationState = ConversationState.IDLE
+    private var esperandoComando: Boolean = false
+    private var intentosError11: Int = 0
 
     companion object {
         @Volatile
@@ -148,6 +150,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 putExtra(EXTRA_START_LISTENING, true)
             }
+            Log.d("EVA_DEBUG", "Hotword detectado, lanzando overlay")
             lanzarConOverlay(intent)
             Handler(Looper.getMainLooper()).postDelayed({ iniciarEscuchaComando() }, 1200)
         } else {
@@ -156,10 +159,25 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun iniciarEscuchaComando() {
+        esperandoComando = true
+        intentosError11 = 0
         Handler(Looper.getMainLooper()).post {
             commandRecognizer?.destroy()
             commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            commandRecognizer?.setRecognitionListener(object : RecognitionListener {
+
+            // recognizerIntent se define antes del listener para que onError pueda capturarlo
+            val recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "CO"))
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                // Umbrales generosos para flujo conversacional: el usuario puede tomarse su tiempo
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 500L)
+            }
+
+            var commandListener: RecognitionListener? = null
+            commandListener = object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {}
                 override fun onBeginningOfSpeech() {}
                 override fun onRmsChanged(rmsdB: Float) {}
@@ -167,16 +185,64 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 override fun onEndOfSpeech() {}
 
                 override fun onError(error: Int) {
-                    Log.e(TAG, "❌ Error SpeechRecognizer: $error")
-                    enviarBroadcast(estado = "No te entendí, di 'HOLA EVA' de nuevo")
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        voskDetector?.startListening()
-                        enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
-                        actualizarNotificacion("Escuchando 'HOLA EVA'...")
-                    }, 2000)
+                    try {
+                        Log.e(TAG, "❌ Error SpeechRecognizer: $error (esperandoComando=$esperandoComando, intentos=$intentosError11)")
+                        if (error == 11 && esperandoComando && intentosError11 < 3) {
+                            intentosError11++
+                            Log.d("EVA_DEBUG", "Error 11 — reintento $intentosError11/3, escuchando comando de nuevo")
+                            Handler(Looper.getMainLooper()).post {
+                                try {
+                                    commandRecognizer?.destroy()
+                                    commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this@EvaListeningService)
+                                    commandRecognizer?.setRecognitionListener(commandListener)
+                                    Log.d("EVA_DEBUG", "SpeechRecognizer recreado")
+                                    arrancarReconocedor(recognizerIntent)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "❌ Error en reintento error 11: ${e.message}")
+                                    esperandoComando = false
+                                    intentosError11 = 0
+                                    voskDetector?.startListening()
+                                    enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                                    actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                                }
+                            }
+                        } else {
+                            if (error == 11) Log.d("EVA_DEBUG", "Error 11 superó 3 reintentos — volviendo al hotword")
+                            esperandoComando = false
+                            intentosError11 = 0
+                            enviarBroadcast(estado = "No te entendí, di 'HOLA EVA' de nuevo")
+                            Handler(Looper.getMainLooper()).post {
+                                try {
+                                    commandRecognizer?.destroy()
+                                    commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this@EvaListeningService)
+                                    commandRecognizer?.setRecognitionListener(commandListener)
+                                    Log.d("EVA_DEBUG", "SpeechRecognizer recreado")
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "❌ Error recreando SpeechRecognizer: ${e.message}")
+                                    commandRecognizer = null
+                                }
+                            }
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                voskDetector?.startListening()
+                                enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                                actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                            }, 2000)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Excepción en onError SpeechRecognizer: ${e.message}")
+                        esperandoComando = false
+                        intentosError11 = 0
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            voskDetector?.startListening()
+                            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                            actualizarNotificacion("Escuchando 'HOLA EVA'...")
+                        }, 2000)
+                    }
                 }
 
                 override fun onResults(results: Bundle?) {
+                    esperandoComando = false
+                    intentosError11 = 0
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if (matches.isNullOrEmpty()) return
                     val texto = matches[0]
@@ -192,18 +258,10 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
                 override fun onPartialResults(partialResults: Bundle?) {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
-            })
-
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "CO"))
-                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                // Umbrales generosos para flujo conversacional: el usuario puede tomarse su tiempo
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 500L)
             }
-            arrancarReconocedor(intent)
+
+            commandRecognizer?.setRecognitionListener(commandListener)
+            arrancarReconocedor(recognizerIntent)
         }
     }
 
@@ -467,23 +525,35 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         }
     }
 
-    // Muestra el overlay y lanza OverlayLauncherActivity, que desde su contexto de Activity
-    // puede abrir cualquier intent sin restricciones de background launch.
+    // Muestra el overlay y lanza OverlayLauncherActivity via PendingIntent con 200ms de espera
+    // para que Android 14 registre la ventana del overlay como visible antes del lanzamiento.
     private fun lanzarConOverlay(intent: Intent) {
+        if (!Settings.canDrawOverlays(this)) {
+            Log.w(TAG, "⚠️ SYSTEM_ALERT_WINDOW no concedido, no se puede usar overlay")
+            pendingLaunchIntent = intent
+            mostrarNotificacionLanzamiento(intent)
+            return
+        }
         mostrarOverlay()
         pendingLaunchIntent = intent
-        try {
-            startActivity(Intent(this, OverlayLauncherActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            Log.d(TAG, "🚀 OverlayLauncherActivity lanzada")
-            // Limpieza de seguridad si OverlayLauncherActivity no llega a ejecutar onDestroy
-            Handler(Looper.getMainLooper()).postDelayed({ removerOverlay() }, 3000)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ OverlayLauncher falló: ${e.message}")
-            removerOverlay()
-            pendingLaunchIntent = null
+        val launcherIntent = Intent(this, OverlayLauncherActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, launcherIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        Handler(Looper.getMainLooper()).postDelayed({
+            try {
+                pendingIntent.send()
+                Log.d(TAG, "🚀 OverlayLauncherActivity lanzada via PendingIntent")
+                Handler(Looper.getMainLooper()).postDelayed({ removerOverlay() }, 3000)
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ OverlayLauncher falló: ${e.message}")
+                removerOverlay()
+                pendingLaunchIntent = null
+            }
+        }, 200)
     }
 
     private fun estaDesbloqueado(): Boolean {
