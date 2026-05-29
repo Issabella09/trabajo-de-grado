@@ -60,6 +60,8 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         @Volatile
         var pendingAutoSend: Boolean = false
+        @Volatile
+        var autoSendAttempts: Int = 0
 
         fun activarLecturaDesdeExterno(nivel: Int = 1) {
             nivelLectura = nivel
@@ -139,6 +141,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                     AccessibilityEvent.TYPE_VIEW_FOCUSED or
                     AccessibilityEvent.TYPE_VIEW_SELECTED or
                     AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
                     AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
                     AccessibilityEvent.TYPE_VIEW_SCROLLED or
                     AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
@@ -284,10 +287,11 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         // Auto-send independiente de lecturaActiva: se ejecuta siempre que EVA espere enviar
-        if (pendingAutoSend &&
-            event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.packageName?.toString() == "com.whatsapp") {
-            intentarAutoEnviarWhatsApp()
+        if (pendingAutoSend && event?.packageName?.toString() == "com.whatsapp") {
+            when (event.eventType) {
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> intentarAutoEnviarWhatsApp()
+            }
         }
 
         if (!Companion.lecturaActiva) return  // ← CAMBIA: lecturaActiva → Companion.lecturaActiva
@@ -564,22 +568,32 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     private fun intentarAutoEnviarWhatsApp() {
         try {
+            autoSendAttempts++
+            if (autoSendAttempts > 10) {
+                Log.w("EVA_WA", "⚠️ autoSendAttempts superó 10 — abortando auto-send")
+                pendingAutoSend = false
+                autoSendAttempts = 0
+                return
+            }
+
             val raiz = rootInActiveWindow ?: return
             if (raiz.packageName?.toString() != "com.whatsapp") return
 
-            // 1. Buscar por view ID "send"
+            // 1. Buscar por view ID exacto
             val porId = raiz.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
                 ?.takeIf { it.isNotEmpty() }
                 ?: raiz.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send_container")
                     ?.takeIf { it.isNotEmpty() }
 
-            val boton = porId?.firstOrNull { it.isClickable }
-                ?: encontrarImageButtonEnWhatsApp(raiz)  // 2. Fallback: ImageButton clickable
+            // 2. Fallback: ImageButton enabled+clickable en el árbol
+            val boton = porId?.firstOrNull { it.isEnabled && it.isClickable }
+                ?: encontrarImageButtonEnWhatsApp(raiz)
 
             if (boton != null) {
                 boton.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                Log.d("EVA_WA", "✅ Mensaje enviado, nodo: ${boton.viewIdResourceName}")
                 pendingAutoSend = false
-                Log.d("EVA_WA", "Auto-send ejecutado")
+                autoSendAttempts = 0
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en auto-send WhatsApp: ${e.message}")

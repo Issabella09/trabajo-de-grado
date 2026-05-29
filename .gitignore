@@ -12,3 +12,4 @@ vcs.xml
 build/
 .gradle/
 app/build/
+/.kotlin/errors/errors-1779576639469.log

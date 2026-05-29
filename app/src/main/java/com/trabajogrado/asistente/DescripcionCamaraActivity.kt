@@ -38,7 +38,7 @@ class DescripcionCamaraActivity : AppCompatActivity(), TextToSpeech.OnInitListen
     private lateinit var cameraExecutor: ExecutorService
 
     // Intervalo entre análisis (ms)
-    private val INTERVALO_MS = 2000L
+    private val INTERVALO_MS = 2500L
     private var ultimoAnalisis = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -253,7 +253,7 @@ class DescripcionCamaraActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                     traduccion[etiqueta.text.lowercase()] ?: etiqueta.text.lowercase()
                 }
 
-                val descripcion = "Se detecta: " + top3.joinToString(", ")
+                val descripcion = top3.joinToString(", ")
 
                 runOnUiThread {
                     txtDescripcion.text = descripcion

@@ -685,6 +685,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                     }
                     hablarYEjecutar("Enviando mensaje a $nombreContacto por WhatsApp") {
                         LecturaPantallaService.pendingAutoSend = true
+                        LecturaPantallaService.autoSendAttempts = 0
                         if (!lanzarActivity(intent)) mostrarNotificacionLanzamiento(intent)
                         Handler(Looper.getMainLooper()).postDelayed({
                             LecturaPantallaService.clicarBotonEnviar("com.whatsapp")
