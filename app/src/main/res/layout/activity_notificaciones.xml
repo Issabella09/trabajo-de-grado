@@ -169,18 +169,6 @@
             android:background="@drawable/btn_gradient_orange"
             android:layout_marginBottom="12dp" />
 
-        <!-- Botón apps -->
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_seleccionar_apps"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Seleccionar Aplicaciones"
-            android:textColor="@color/naranja_primario"
-            android:textSize="15sp"
-            android:textAllCaps="false"
-            android:background="@drawable/btn_outline_orange"
-            android:layout_marginBottom="12dp" />
-
         <!-- Botón prefijo -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_configurar_prefijo"

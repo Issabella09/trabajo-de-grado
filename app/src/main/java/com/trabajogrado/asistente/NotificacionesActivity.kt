@@ -23,7 +23,6 @@ class NotificacionesActivity : AppCompatActivity() {
     private lateinit var recyclerApps: RecyclerView
     private lateinit var txtEstado: TextView
     private lateinit var btnVolver: Button
-    private lateinit var btnSeleccionarApps: Button
     private lateinit var btnConfigurarPrefijo: Button
 
     companion object {
@@ -52,7 +51,6 @@ class NotificacionesActivity : AppCompatActivity() {
         recyclerApps = findViewById(R.id.recycler_apps)
         txtEstado = findViewById(R.id.txt_estado)
         btnVolver = findViewById(R.id.btn_volver)
-        btnSeleccionarApps = findViewById(R.id.btn_seleccionar_apps)
         btnConfigurarPrefijo = findViewById(R.id.btn_configurar_prefijo)
 
         recyclerApps.layoutManager = LinearLayoutManager(this)
@@ -69,10 +67,6 @@ class NotificacionesActivity : AppCompatActivity() {
         }
 
         btnVolver.setOnClickListener { finish() }
-
-        btnSeleccionarApps.setOnClickListener {
-            startActivity(Intent(this, SeleccionAppsActivity::class.java))
-        }
 
         btnConfigurarPrefijo.setOnClickListener {
             startActivity(Intent(this, ConfiguracionPrefijoActivity::class.java))

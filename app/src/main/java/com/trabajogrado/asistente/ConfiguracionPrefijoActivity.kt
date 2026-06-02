@@ -13,6 +13,7 @@ class ConfiguracionPrefijoActivity : AppCompatActivity() {
     private lateinit var radioMensaje: RadioButton
     private lateinit var radioSinPrefijo: RadioButton
     private lateinit var btnGuardar: Button
+    private lateinit var btnVolver: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +30,7 @@ class ConfiguracionPrefijoActivity : AppCompatActivity() {
         radioMensaje = findViewById(R.id.radio_mensaje)
         radioSinPrefijo = findViewById(R.id.radio_sin_prefijo)
         btnGuardar = findViewById(R.id.btn_guardar_prefijo)
+        btnVolver = findViewById(R.id.btn_volver_prefijo)
     }
 
     private fun cargarPreferencia() {
@@ -44,6 +46,7 @@ class ConfiguracionPrefijoActivity : AppCompatActivity() {
     }
 
     private fun configurarListeners() {
+        btnVolver.setOnClickListener { finish() }
         btnGuardar.setOnClickListener {
             guardarPreferencia()
             finish()
