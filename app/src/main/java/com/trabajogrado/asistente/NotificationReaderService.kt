@@ -173,8 +173,9 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             tts?.stop()
             Log.d(TAG, "Llamada finalizada: ${sbn.key}")
         }
-        ultimoTextoLeido.remove(sbn.key)
         snapshotInicial.remove(sbn.key)
+        // No se borra ultimoTextoLeido al descartar: si Android re-postea la misma
+        // notificación (heads-up, lock screen, etc.) con el mismo texto, no la relee.
     }
 
     private fun esLlamadaEntrante(sbn: StatusBarNotification): Boolean {
