@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="60dp"
+            android:layout_marginBottom="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EVA"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:textColor="@color/naranja_primario"
+                android:letterSpacing="0.05"
+                android:contentDescription="EVA, asistente de accesibilidad" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recupera tu contraseña"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.5"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Label correo -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CORREO ELECTRÓNICO"
+            android:textSize="11sp"
+            android:letterSpacing="0.15"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.4"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etEmailRecuperar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="correo@ejemplo.com"
+            android:inputType="textEmailAddress"
+            android:background="@drawable/card_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Campo de correo electrónico. Escribe el correo con el que creaste tu cuenta." />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Te enviaremos un enlace para restablecer tu contraseña."
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.5"
+            android:layout_marginBottom="32dp" />
+
+        <!-- ProgressBar -->
+        <ProgressBar
+            android:id="@+id/progressRecuperar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            android:contentDescription="Enviando correo de recuperación, por favor espera." />
+
+        <!-- Mensaje de éxito (oculto hasta confirmar envío) -->
+        <TextView
+            android:id="@+id/txtMensajeExito"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Correo enviado. Revisa tu bandeja de entrada."
+            android:textSize="14sp"
+            android:textColor="@color/naranja_primario"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            android:contentDescription="El correo de recuperación fue enviado exitosamente. Revisa tu bandeja de entrada." />
+
+        <!-- Botón principal -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnEnviarRecuperar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Enviar correo de recuperación"
+            android:textColor="@color/blanco"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:background="@drawable/btn_gradient_orange"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Botón para enviar el correo de recuperación de contraseña al correo ingresado." />
+
+        <!-- Divisor -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0.5dp"
+                android:layout_weight="1"
+                android:background="?attr/colorOnSurface"
+                android:alpha="0.1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  o  "
+                android:textSize="13sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.3" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0.5dp"
+                android:layout_weight="1"
+                android:background="?attr/colorOnSurface"
+                android:alpha="0.1" />
+        </LinearLayout>
+
+        <!-- Volver al login -->
+        <TextView
+            android:id="@+id/txtVolverLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="← Volver al inicio de sesión"
+            android:textColor="@color/naranja_primario"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginBottom="32dp"
+            android:contentDescription="Volver a la pantalla de inicio de sesión." />
+
+    </LinearLayout>
+</ScrollView>

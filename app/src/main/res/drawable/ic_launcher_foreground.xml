@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Círculo naranja -->
+    <path
+        android:fillColor="#F76707"
+        android:pathData="M54,10 A44,44 0 1,1 53.99,10 Z"/>
+
+    <!-- Trazo vertical E -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M38,36 L42,36 Q44,36 44,38 L44,70 Q44,72 42,72 L38,72 Q36,72 36,70 L36,38 Q36,36 38,36 Z"/>
+
+    <!-- Horizontal superior -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M36,36 L60,36 Q62,36 62,38 L62,42 Q62,44 60,44 L36,44 Q36,44 36,42 L36,38 Z"/>
+
+    <!-- Horizontal medio -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M36,50 L54,50 Q56,50 56,52 L56,56 Q56,58 54,58 L36,58 Q36,58 36,56 L36,52 Z"/>
+
+    <!-- Horizontal inferior -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M36,64 L60,64 Q62,64 62,66 L62,70 Q62,72 60,72 L36,72 Q36,72 36,70 L36,66 Z"/>
+
+    <!-- Onda 1 -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+        android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M66,44 Q74,54 66,64"/>
+
+    <!-- Onda 2 -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+        android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M72,40 Q83,54 72,68"
+        android:strokeAlpha="0.65"/>
+
+    <!-- Onda 3 -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="2.5"
+        android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M78,36 Q92,54 78,72"
+        android:strokeAlpha="0.35"/>
+</vector>

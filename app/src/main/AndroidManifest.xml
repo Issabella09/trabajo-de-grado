@@ -48,6 +48,11 @@
 
         <activity android:name=".LoginActivity" />
         <activity android:name=".RegisterActivity" />
+        <activity
+            android:name=".RecuperarContrasenaActivity"
+            android:label="Recuperar Contraseña"
+            android:exported="false"
+            android:theme="@style/Theme.Asistente" />
 
         <!-- Actividad principal -->
         <activity

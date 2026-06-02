@@ -75,18 +75,7 @@ class LoginActivity : AppCompatActivity() {
 
         val btnOlvidePassword = findViewById<TextView>(R.id.btnOlvidePassword)
         btnOlvidePassword.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            if (email.isEmpty()) {
-                Toast.makeText(this, "Escribe tu correo primero", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            auth.sendPasswordResetEmail(email)
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Correo de recuperación enviado", Toast.LENGTH_LONG).show()
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                }
+            startActivity(Intent(this, RecuperarContrasenaActivity::class.java))
         }
     }
 
