@@ -28,7 +28,7 @@ class VoskHotwordDetector(
         try {
             val modelDir = File(context.filesDir, "vosk-model-small-es-0.42")
             if (modelDir.exists()) {
-                Log.d(TAG, "🗑️ Limpiando modelo antiguo...")
+                Log.d(TAG, "Limpiando modelo antiguo...")
                 modelDir.deleteRecursively()
             }
         } catch (e: Exception) {
@@ -42,15 +42,15 @@ class VoskHotwordDetector(
                 limpiarModeloCorrupto()
                 val modelPath = File(context.filesDir, "vosk-model-small-es-0.42")
 
-                Log.d(TAG, "📂 Verificando modelo en: ${modelPath.absolutePath}")
+                Log.d(TAG, "Verificando modelo en: ${modelPath.absolutePath}")
 
                 if (!modelPath.exists()) {
-                    Log.d(TAG, "📦 Copiando modelo desde assets...")
+                    Log.d(TAG, "Copiando modelo desde assets...")
                     copyModelFromAssets(modelPath)
                 }
 
-                Log.d(TAG, "📂 Path del modelo: ${modelPath.absolutePath}")
-                Log.d(TAG, "📂 Contenido:")
+                Log.d(TAG, "Path del modelo: ${modelPath.absolutePath}")
+                Log.d(TAG, "Contenido:")
                 modelPath.listFiles()?.forEach {
                     Log.d(TAG, "   - ${it.name} (${if (it.isDirectory) "DIR" else "FILE"})")
                 }
@@ -62,19 +62,19 @@ class VoskHotwordDetector(
                     throw Exception("Faltan carpetas: $missing")
                 }
 
-                Log.d(TAG, "✅ Todas las carpetas necesarias presentes")
+                Log.d(TAG, "Todas las carpetas necesarias presentes")
 
                 // Cargar modelo con el path correcto
                 model = Model(modelPath.absolutePath)
 
                 Handler(Looper.getMainLooper()).post {
-                    Log.d(TAG, "✅ Modelo Vosk cargado")
+                    Log.d(TAG, "Modelo Vosk cargado")
                     onReady()
                 }
 
             } catch (e: Exception) {
                 Handler(Looper.getMainLooper()).post {
-                    Log.e(TAG, "❌ Error cargando modelo: ${e.message}")
+                    Log.e(TAG, "Error cargando modelo: ${e.message}")
                     e.printStackTrace()
                     onError(e.message ?: "Error desconocido")
                 }
@@ -83,28 +83,28 @@ class VoskHotwordDetector(
     }
 
     private fun copyModelFromAssets(targetDir: File) {
-        Log.d(TAG, "📦 Creando directorio: ${targetDir.absolutePath}")
+        Log.d(TAG, "Creando directorio: ${targetDir.absolutePath}")
         targetDir.mkdirs()
 
-        Log.d(TAG, "📦 Iniciando copia recursiva...")
+        Log.d(TAG, "Iniciando copia recursiva...")
         copyAssetFolder("vosk-model-small-es-0.42", targetDir)
 
-        Log.d(TAG, "📦 Modelo copiado completamente")
+        Log.d(TAG, "Modelo copiado completamente")
     }
 
     private fun copyAssetFolder(assetPath: String, targetDir: File) {
         val assetManager = context.assets
 
-        Log.d(TAG, "📁 Procesando: $assetPath")
+        Log.d(TAG, "Procesando: $assetPath")
 
         val files = assetManager.list(assetPath)
 
         if (files == null || files.isEmpty()) {
-            Log.e(TAG, "❌ No se encontraron archivos en: $assetPath")
+            Log.e(TAG, "No se encontraron archivos en: $assetPath")
             return
         }
 
-        Log.d(TAG, "📁 Encontrados ${files.size} items en $assetPath")
+        Log.d(TAG, "Encontrados ${files.size} items en $assetPath")
 
         for (filename in files) {
             val fullAssetPath = "$assetPath/$filename"
@@ -114,21 +114,21 @@ class VoskHotwordDetector(
 
             if (subFiles != null && subFiles.isNotEmpty()) {
                 // Es una carpeta
-                Log.d(TAG, "📂 Creando carpeta: ${targetFile.name}")
+                Log.d(TAG, "Creando carpeta: ${targetFile.name}")
                 targetFile.mkdirs()
                 copyAssetFolder(fullAssetPath, targetFile)
             } else {
                 // Es un archivo
                 try {
-                    Log.d(TAG, "📄 Copiando archivo: ${targetFile.name}")
+                    Log.d(TAG, "Copiando archivo: ${targetFile.name}")
                     assetManager.open(fullAssetPath).use { input ->
                         targetFile.outputStream().use { output ->
                             input.copyTo(output)
                         }
                     }
-                    Log.d(TAG, "✅ Copiado: ${targetFile.name} (${targetFile.length()} bytes)")
+                    Log.d(TAG, "Copiado: ${targetFile.name} (${targetFile.length()} bytes)")
                 } catch (e: IOException) {
-                    Log.e(TAG, "❌ Error copiando $fullAssetPath: ${e.message}")
+                    Log.e(TAG, "Error copiando $fullAssetPath: ${e.message}")
                 }
             }
         }
@@ -137,7 +137,7 @@ class VoskHotwordDetector(
     fun startListening() {
         if (isListening) return
         if (model == null) {
-            Log.e(TAG, "❌ Modelo no inicializado")
+            Log.e(TAG, "Modelo no inicializado")
             return
         }
         hotwordDetected = false
@@ -160,7 +160,7 @@ class VoskHotwordDetector(
                             val result = JSONObject(it).optString("text", "")
                             if (result.contains("hola eva", ignoreCase = true) && !hotwordDetected) {
                                 hotwordDetected = true
-                                Log.d(TAG, "🎯 HOTWORD DETECTADO: $result")
+                                Log.d(TAG, "HOTWORD DETECTADO: $result")
                                 stopListening()
                                 Handler(Looper.getMainLooper()).post { onHotwordDetected() }
                             }
@@ -186,7 +186,7 @@ class VoskHotwordDetector(
             })
 
             isListening = true
-            Log.d(TAG, "👂 Escuchando hotword 'HOLA EVA'...")
+            Log.d(TAG, "Escuchando hotword 'HOLA EVA'...")
 
         } catch (e: Exception) {
             Log.e(TAG, "Error iniciando escucha: ${e.message}")
@@ -199,7 +199,7 @@ class VoskHotwordDetector(
             speechService?.shutdown()
             speechService = null
             isListening = false
-            Log.d(TAG, "🔇 Hotword detector detenido")
+            Log.d(TAG, "Hotword detector detenido")
         } catch (e: Exception) {
             Log.e(TAG, "Error deteniendo: ${e.message}")
         }

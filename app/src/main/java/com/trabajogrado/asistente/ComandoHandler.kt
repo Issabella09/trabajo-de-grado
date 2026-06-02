@@ -18,7 +18,7 @@ class ComandoHandler(
 
     fun procesarComando(comando: String): Boolean {
         val comandoLower = comando.lowercase().trim()
-        Log.d(TAG, "🔄 Procesando comando: '$comandoLower'")
+        Log.d(TAG, "Procesando comando: '$comandoLower'")
 
         return when {
             // ========== ABRIR APLICACIONES ==========
@@ -297,6 +297,6 @@ class ComandoHandler(
         // Si hay TTS configurado, hablar
         textToSpeech?.speak(mensaje, TextToSpeech.QUEUE_FLUSH, null, null)
 
-        Log.d(TAG, "💬 Respuesta: $mensaje")
+        Log.d(TAG, "Respuesta: $mensaje")
     }
 }

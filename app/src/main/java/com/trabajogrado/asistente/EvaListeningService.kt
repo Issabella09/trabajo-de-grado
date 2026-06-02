@@ -117,9 +117,9 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
             tts?.setPitch(1.0f)
             tts?.setSpeechRate(0.9f)
             ttsListo = true
-            Log.d(TAG, "✅ TTS listo")
+            Log.d(TAG, "TTS listo")
         } else {
-            Log.e(TAG, "❌ Error TTS")
+            Log.e(TAG, "Error TTS")
         }
     }
 
@@ -128,21 +128,21 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         voskDetector?.initialize(
             onReady = {
                 voskDetector?.startListening()
-                enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
                 actualizarNotificacion("Escuchando 'HOLA EVA'...")
-                Log.d(TAG, "✅ Vosk listo, escuchando")
+                Log.d(TAG, "Vosk listo, escuchando")
             },
             onError = { error ->
-                Log.e(TAG, "❌ Error Vosk: $error")
+                Log.e(TAG, "Error Vosk: $error")
                 enviarBroadcast(estado = "Error inicializando EVA")
             }
         )
     }
 
     private fun onHotwordDetected() {
-        Log.d(TAG, "🎯 HOLA EVA DETECTADO")
+        Log.d(TAG, "HOLA EVA DETECTADO")
         vibrar()
-        enviarBroadcast(estado = "🎤 EVA activado, di tu comando...")
+        enviarBroadcast(estado = "EVA activado, di tu comando...")
         actualizarNotificacion("EVA activado")
 
         if (!AsistenteVozNuevoActivity.isInForeground) {
@@ -186,7 +186,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
 
                 override fun onError(error: Int) {
                     try {
-                        Log.e(TAG, "❌ Error SpeechRecognizer: $error (esperandoComando=$esperandoComando, intentos=$intentosError11)")
+                        Log.e(TAG, "Error SpeechRecognizer: $error (esperandoComando=$esperandoComando, intentos=$intentosError11)")
                         if (error == 11 && esperandoComando && intentosError11 < 3) {
                             intentosError11++
                             Log.d("EVA_DEBUG", "Error 11 — reintento $intentosError11/3, escuchando comando de nuevo")
@@ -198,11 +198,11 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                                     Log.d("EVA_DEBUG", "SpeechRecognizer recreado")
                                     arrancarReconocedor(recognizerIntent)
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "❌ Error en reintento error 11: ${e.message}")
+                                    Log.e(TAG, "Error en reintento error 11: ${e.message}")
                                     esperandoComando = false
                                     intentosError11 = 0
                                     voskDetector?.startListening()
-                                    enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                                    enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
                                     actualizarNotificacion("Escuchando 'HOLA EVA'...")
                                 }
                             }
@@ -218,23 +218,23 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                                     commandRecognizer?.setRecognitionListener(commandListener)
                                     Log.d("EVA_DEBUG", "SpeechRecognizer recreado")
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "❌ Error recreando SpeechRecognizer: ${e.message}")
+                                    Log.e(TAG, "Error recreando SpeechRecognizer: ${e.message}")
                                     commandRecognizer = null
                                 }
                             }
                             Handler(Looper.getMainLooper()).postDelayed({
                                 voskDetector?.startListening()
-                                enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                                enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
                                 actualizarNotificacion("Escuchando 'HOLA EVA'...")
                             }, 2000)
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "❌ Excepción en onError SpeechRecognizer: ${e.message}")
+                        Log.e(TAG, "Excepción en onError SpeechRecognizer: ${e.message}")
                         esperandoComando = false
                         intentosError11 = 0
                         Handler(Looper.getMainLooper()).postDelayed({
                             voskDetector?.startListening()
-                            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                            enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
                             actualizarNotificacion("Escuchando 'HOLA EVA'...")
                         }, 2000)
                     }
@@ -246,12 +246,12 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if (matches.isNullOrEmpty()) return
                     val texto = matches[0]
-                    Log.d(TAG, "✅ COMANDO: $texto")
+                    Log.d(TAG, "COMANDO: $texto")
                     enviarBroadcast(estado = "Procesando...", comando = "EVA: $texto")
                     procesarComando(texto)
                     Handler(Looper.getMainLooper()).postDelayed({
                         voskDetector?.startListening()
-                        enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+                        enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
                         actualizarNotificacion("Escuchando 'HOLA EVA'...")
                     }, 3000)
                 }
@@ -452,7 +452,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     // Habla la confirmación con TTS y ejecuta la acción DESPUÉS de que termina de hablar.
     private fun hablarYEjecutar(mensaje: String, accion: () -> Unit) {
         enviarBroadcast(respuesta = mensaje)
-        Log.d(TAG, "💬 $mensaje → acción después")
+        Log.d(TAG, "$mensaje → acción después")
         if (!ttsListo) { accion(); return }
         val uid = "eva_${System.currentTimeMillis()}"
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
@@ -487,7 +487,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
                 .build()
         )
-        Log.d(TAG, "🔔 Notificación de lanzamiento mostrada")
+        Log.d(TAG, "Notificación de lanzamiento mostrada")
     }
 
     // Añade una View 1×1 invisible con TYPE_APPLICATION_OVERLAY. En MIUI, tener un overlay
@@ -509,7 +509,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
                 PixelFormat.TRANSLUCENT
             )
             wmService?.addView(overlayView, params)
-            Log.d(TAG, "🪟 Overlay añadido")
+            Log.d(TAG, "Overlay añadido")
         } catch (e: Exception) {
             Log.e(TAG, "Error añadiendo overlay: ${e.message}")
         }
@@ -529,7 +529,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     // para que Android 14 registre la ventana del overlay como visible antes del lanzamiento.
     private fun lanzarConOverlay(intent: Intent) {
         if (!Settings.canDrawOverlays(this)) {
-            Log.w(TAG, "⚠️ SYSTEM_ALERT_WINDOW no concedido, no se puede usar overlay")
+            Log.w(TAG, "SYSTEM_ALERT_WINDOW no concedido, no se puede usar overlay")
             pendingLaunchIntent = intent
             mostrarNotificacionLanzamiento(intent)
             return
@@ -546,10 +546,10 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         Handler(Looper.getMainLooper()).postDelayed({
             try {
                 pendingIntent.send()
-                Log.d(TAG, "🚀 OverlayLauncherActivity lanzada via PendingIntent")
+                Log.d(TAG, "OverlayLauncherActivity lanzada via PendingIntent")
                 Handler(Looper.getMainLooper()).postDelayed({ removerOverlay() }, 3000)
             } catch (e: Exception) {
-                Log.e(TAG, "❌ OverlayLauncher falló: ${e.message}")
+                Log.e(TAG, "OverlayLauncher falló: ${e.message}")
                 removerOverlay()
                 pendingLaunchIntent = null
             }
@@ -565,7 +565,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
     private fun responder(mensaje: String) {
         enviarBroadcast(respuesta = mensaje)
         hablar(mensaje)
-        Log.d(TAG, "💬 $mensaje")
+        Log.d(TAG, "$mensaje")
     }
 
     private fun hablar(texto: String) {
@@ -642,7 +642,7 @@ class EvaListeningService : Service(), TextToSpeech.OnInitListener {
         conversationState = ConversationState.IDLE
         Handler(Looper.getMainLooper()).postDelayed({
             voskDetector?.startListening()
-            enviarBroadcast(estado = "👂 Esperando 'HOLA EVA'...")
+            enviarBroadcast(estado = "Esperando 'HOLA EVA'...")
             actualizarNotificacion("Escuchando 'HOLA EVA'...")
         }, delayMs)
     }

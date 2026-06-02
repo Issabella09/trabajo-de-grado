@@ -61,7 +61,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             // PROCESAR la imagen con ML Kit
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    // ✅ ÉXITO: Texto detectado
+                    // ÉXITO: Texto detectado
                     val textoDetectado = visionText.text
 
                     if (textoDetectado.isNotEmpty()) {
@@ -75,23 +75,23 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         hablar("Texto detectado: $textoDetectado")
 
                     } else {
-                        // ❌ No se detectó texto
+                        // No se detectó texto
                         Log.d(TAG, "No se detectó texto")
                         txtInstrucciones.text = "No se encontró texto"
                         mostrarResultadoOCR("No se detectó texto en la imagen\n\nApunta a texto más claro o acércate más.")
                     }
                 }
                 .addOnFailureListener { exception ->
-                    // ❌ ERROR en el procesamiento
-                    Log.e(TAG, "❌ Error en ML Kit: ${exception.message}", exception)
-                    txtInstrucciones.text = "❌ Error en OCR"
-                    mostrarResultadoOCR("❌ Error al procesar imagen:\n${exception.message}")
+                    // ERROR en el procesamiento
+                    Log.e(TAG, "Error en ML Kit: ${exception.message}", exception)
+                    txtInstrucciones.text = "Error en OCR"
+                    mostrarResultadoOCR("Error al procesar imagen:\n${exception.message}")
                 }
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error general: ${e.message}", e)
-            txtInstrucciones.text = "❌ Error al procesar"
-            mostrarResultadoOCR("❌ Error: ${e.message}")
+            Log.e(TAG, "Error general: ${e.message}", e)
+            txtInstrucciones.text = "Error al procesar"
+            mostrarResultadoOCR("Error: ${e.message}")
         }
     }
 
@@ -148,7 +148,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     val fotoPath = data?.getStringExtra("foto_path")
                     if (fotoPath != null) {
                         Log.d(TAG, "Foto recibida: $fotoPath")
-                        txtInstrucciones.text = "✅ Foto recibida - Procesando..."
+                        txtInstrucciones.text = "Foto recibida - Procesando..."
                         val bitmap = BitmapFactory.decodeFile(fotoPath)
                         procesarImagenConOCR(bitmap)
                     }
@@ -161,7 +161,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             REQUEST_CODE_GALERIA -> { // Galería
                 if (resultCode == RESULT_OK && data != null) {
                     Log.d(TAG, "Imagen seleccionada de galería")
-                    txtInstrucciones.text = "✅ Imagen seleccionada - Procesando..."
+                    txtInstrucciones.text = "Imagen seleccionada - Procesando..."
 
                     try {
                         val uri = data.data
@@ -205,7 +205,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     // Permiso denegado
                     Log.e(TAG, "Permiso de almacenamiento denegado")
                     txtInstrucciones.text = "Se necesita permiso para acceder a la galería"
-                    mostrarResultadoOCR("❌ Permiso denegado. No se puede acceder a la galería.")
+                    mostrarResultadoOCR("Permiso denegado. No se puede acceder a la galería.")
                 }
             }
         }
@@ -267,7 +267,7 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             hablar(texto)
         } else {
             Log.d(TAG, "No hay texto para leer")
-            txtInstrucciones.text = "⚠️ Primero detecta texto antes de leer"
+            txtInstrucciones.text = "Primero detecta texto antes de leer"
         }
     }
 
@@ -276,15 +276,15 @@ class OCRActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val result = textToSpeech.setLanguage(Locale("es", "CO"))
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "❌ Idioma español no soportado")
+                Log.e(TAG, "Idioma español no soportado")
             } else {
-                Log.d(TAG, "✅ TextToSpeech listo en OCR")
+                Log.d(TAG, "TextToSpeech listo en OCR")
                 // Configurar voz
                 textToSpeech.setPitch(0.95f)
                 textToSpeech.setSpeechRate(1.0f)
             }
         } else {
-            Log.e(TAG, "❌ Error al inicializar TextToSpeech")
+            Log.e(TAG, "Error al inicializar TextToSpeech")
         }
     }
 

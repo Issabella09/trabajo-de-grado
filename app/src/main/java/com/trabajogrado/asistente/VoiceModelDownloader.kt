@@ -14,11 +14,11 @@ class VoiceModelDownloader(private val context: Context) {
         val assetsDir = File(context.filesDir, "models")
 
         if (assetsDir.exists() && assetsDir.listFiles()?.isNotEmpty() == true) {
-            Log.d(TAG, "✅ Modelos ya descargados")
+            Log.d(TAG, "Modelos ya descargados")
             return assetsDir
         }
 
-        Log.d(TAG, "📥 Descargando modelos de voz...")
+        Log.d(TAG, "Descargando modelos de voz...")
 
         // Crear directorio
         val esDir = File(assetsDir, "es-es")

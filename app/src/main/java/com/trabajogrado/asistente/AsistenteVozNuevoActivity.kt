@@ -61,7 +61,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.getBooleanExtra(EvaListeningService.EXTRA_START_LISTENING, false)) {
-            tvEstadoEva.text = "🎤 EVA activado, di tu comando..."
+            tvEstadoEva.text = "EVA activado, di tu comando..."
         }
     }
 
@@ -92,11 +92,11 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         // mostrar estado "escuchando" en lugar del estado de espera normal.
         val startListening = intent.getBooleanExtra(EvaListeningService.EXTRA_START_LISTENING, false)
         if (startListening) {
-            tvEstadoEva.text = "🎤 EVA activado, di tu comando..."
+            tvEstadoEva.text = "EVA activado, di tu comando..."
             intent.removeExtra(EvaListeningService.EXTRA_START_LISTENING)
         } else {
             tvEstadoEva.text = if (EvaListeningService.isRunning)
-                "👂 Esperando 'HOLA EVA'..."
+                "Esperando 'HOLA EVA'..."
             else
                 "Di 'HOLA EVA' seguido de tu comando"
         }
@@ -148,7 +148,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
             .edit().putBoolean(KEY_EVA_ACTIVE, true).apply()
         EvaListeningService.iniciar(this)
         tvEstadoEva.text = "Iniciando EVA..."
-        Log.d(TAG, "✅ EVA activado")
+        Log.d(TAG, "EVA activado")
     }
 
     private fun desactivarEva() {
@@ -158,7 +158,7 @@ class AsistenteVozNuevoActivity : AppCompatActivity() {
         tvEstadoEva.text = "Di 'EVA' seguido de tu comando"
         tvUltimoComando.text = "Ninguno aún"
         tvRespuesta.text = "Esperando comando..."
-        Log.d(TAG, "🔇 EVA desactivado")
+        Log.d(TAG, "EVA desactivado")
     }
 
     private fun solicitarPermisoContactos() {

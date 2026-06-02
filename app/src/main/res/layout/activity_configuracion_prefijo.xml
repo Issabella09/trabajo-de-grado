@@ -64,7 +64,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💬 Estilo de Lectura"
+                    android:text="Estilo de Lectura"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/negro"
@@ -194,7 +194,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💡 Ejemplo"
+                    android:text="Ejemplo"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/naranja_primario"
@@ -215,7 +215,7 @@
             android:id="@+id/btn_guardar_prefijo"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="✓ Guardar Preferencia"
+            android:text="Guardar Preferencia"
             android:textColor="@color/blanco"
             android:textSize="16sp"
             android:textStyle="bold"

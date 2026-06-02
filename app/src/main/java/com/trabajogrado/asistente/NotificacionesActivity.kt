@@ -110,12 +110,12 @@ class NotificacionesActivity : AppCompatActivity() {
     private fun cargarListaApps() {
         try {
             val apps = obtenerAppsInstaladas()
-            Log.d("Notificaciones", "📱 Apps encontradas: ${apps.size}")
+            Log.d("Notificaciones", "Apps encontradas: ${apps.size}")
             recyclerApps.adapter = AppsAdapter(apps) { app, activada ->
                 guardarEstadoApp(app, activada)
             }
         } catch (e: Exception) {
-            Log.e("Notificaciones", "❌ Error cargando apps: ${e.message}", e)
+            Log.e("Notificaciones", "Error cargando apps: ${e.message}", e)
             Toast.makeText(this, "Error cargando apps", Toast.LENGTH_SHORT).show()
         }
     }
@@ -148,17 +148,17 @@ class NotificacionesActivity : AppCompatActivity() {
     private fun guardarEstadoApp(app: AppInfo, activada: Boolean) {
         getSharedPreferences("apps_seleccionadas", MODE_PRIVATE)
             .edit().putBoolean(app.packageName, activada).apply()
-        Log.d("Notificaciones", "💾 ${app.nombre} (${app.packageName}): $activada")
+        Log.d("Notificaciones", "${app.nombre} (${app.packageName}): $activada")
     }
 
     private fun actualizarEstadoServicio() {
         if (isServicioNotificacionesActivado()) {
             txtEstado.text = if (switchLecturaAuto.isChecked)
-                "✅ Lectura automática ACTIVADA"
+                "Lectura automática ACTIVADA"
             else
-                "⏸️ Lectura automática PAUSADA"
+                "Lectura automática PAUSADA"
         } else {
-            txtEstado.text = "❌ Permiso de notificaciones no concedido"
+            txtEstado.text = "Permiso de notificaciones no concedido"
         }
     }
 

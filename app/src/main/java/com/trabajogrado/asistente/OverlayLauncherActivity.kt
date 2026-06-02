@@ -21,9 +21,9 @@ class OverlayLauncherActivity : Activity() {
         if (pending != null) {
             try {
                 startActivity(pending)
-                Log.d("OverlayLauncher", "✅ Intent lanzado: ${pending.component ?: pending.action}")
+                Log.d("OverlayLauncher", "Intent lanzado: ${pending.component ?: pending.action}")
             } catch (e: Exception) {
-                Log.e("OverlayLauncher", "❌ Error lanzando intent: ${e.message}")
+                Log.e("OverlayLauncher", "Error lanzando intent: ${e.message}")
             }
         }
 

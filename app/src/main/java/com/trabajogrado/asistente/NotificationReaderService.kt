@@ -32,7 +32,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
                 tts?.stop()
-                Log.d(TAG, "🔲 Pantalla apagada — TTS detenido")
+                Log.d(TAG, "Pantalla apagada — TTS detenido")
             }
         }
     }
@@ -67,7 +67,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
     override fun onCreate() {
         super.onCreate()
         instance = this
-        Log.d(TAG, "✅ Servicio de notificaciones creado")
+        Log.d(TAG, "Servicio de notificaciones creado")
         tts = TextToSpeech(this, this)
         // CORRECCIÓN 2: registrar el receiver al crear el servicio
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
@@ -88,9 +88,9 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
                     .getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
                 snapshotInicial[sbn.key] = "$titulo|$texto".hashCode()
             }
-            Log.d(TAG, "📋 Snapshot inicial: ${snapshotInicial.size} notificaciones preexistentes")
+            Log.d(TAG, "Snapshot inicial: ${snapshotInicial.size} notificaciones preexistentes")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error capturando snapshot: ${e.message}")
+            Log.e(TAG, "Error capturando snapshot: ${e.message}")
         }
     }
 
@@ -100,9 +100,9 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             tts?.setPitch(1.0f)
             tts?.setSpeechRate(0.9f)
             ttsListo = true
-            Log.d(TAG, "✅ TTS inicializado")
+            Log.d(TAG, "TTS inicializado")
         } else {
-            Log.e(TAG, "❌ Error inicializando TTS")
+            Log.e(TAG, "Error inicializando TTS")
         }
     }
 
@@ -115,7 +115,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             // ("android" emite p.ej. "EVA se muestra sobre otras apps" al activar el overlay)
             if (packageName == applicationContext.packageName || packageName == "android") return
 
-            Log.d(TAG, "📬 Notificación de: $packageName | key: ${sbn.key}")
+            Log.d(TAG, "Notificación de: $packageName | key: ${sbn.key}")
 
             if (esLlamadaEntrante(sbn)) {
                 manejarLlamadaEntrante(sbn)
@@ -126,7 +126,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
 
             // CORRECCIÓN 3: filtrar por packageName (no por nombre de app)
             if (!isAppPermitida(packageName)) {
-                Log.d(TAG, "🚫 App no permitida: $packageName")
+                Log.d(TAG, "App no permitida: $packageName")
                 return
             }
 
@@ -142,7 +142,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             val hashSnapshot = snapshotInicial[sbn.key]
             if (hashSnapshot != null) {
                 if (hashSnapshot == contenidoHash) {
-                    Log.d(TAG, "📋 Preexistente sin cambios, omitida")
+                    Log.d(TAG, "Preexistente sin cambios, omitida")
                     return
                 } else {
                     snapshotInicial.remove(sbn.key)
@@ -150,7 +150,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             }
 
             if (ultimoTextoLeido[sbn.key] == texto) {
-                Log.d(TAG, "🔇 Texto sin cambios, omitido")
+                Log.d(TAG, "Texto sin cambios, omitido")
                 return
             }
 
@@ -159,11 +159,11 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
                 ultimoTextoLeido.entries.iterator().let { it.next(); it.remove() }
             }
 
-            Log.d(TAG, "📱 $appName | 📌 $titulo | 💬 $texto")
+            Log.d(TAG, "$appName | $titulo | $texto")
             leerNotificacion(appName, titulo, texto)
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error procesando notificación: ${e.message}", e)
+            Log.e(TAG, "Error procesando notificación: ${e.message}", e)
         }
     }
 
@@ -171,7 +171,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         if (esLlamadaEntrante(sbn)) {
             llamadasAnunciadas.remove(sbn.key)
             tts?.stop()
-            Log.d(TAG, "🔄 Llamada finalizada: ${sbn.key}")
+            Log.d(TAG, "Llamada finalizada: ${sbn.key}")
         }
         ultimoTextoLeido.remove(sbn.key)
         snapshotInicial.remove(sbn.key)
@@ -197,7 +197,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
 
         val ultimaVez = llamadasAnunciadas[claveLlamada]
         if (ultimaVez != null && (ahora - ultimaVez) < 30_000L) {
-            Log.d(TAG, "🔇 Llamada ya anunciada: $claveLlamada")
+            Log.d(TAG, "Llamada ya anunciada: $claveLlamada")
             return
         }
 
@@ -216,13 +216,13 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         // estén siempre presentes, sin importar desde qué rama se llame.
         fun anunciarLlamada(nombre: String) {
             if (!ttsListo) {
-                Log.e(TAG, "❌ TTS no listo, no se puede anunciar la llamada")
+                Log.e(TAG, "TTS no listo, no se puede anunciar la llamada")
                 return
             }
             val texto = if (nombre.isNotBlank()) "Llamada entrante de $nombre"
                         else "Llamada de número desconocido"
             val uid = "llamada_${System.currentTimeMillis()}"
-            Log.d(TAG, "📞 Anunciando: $texto")
+            Log.d(TAG, "Anunciando: $texto")
             tts?.stop()
             tts?.speak(texto, TextToSpeech.QUEUE_FLUSH, null, uid)
         }
@@ -233,7 +233,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         // Fallback a 1500 ms: si el hilo de contacto no respondió, anuncia con valorBruto
         val fallbackRunnable = Runnable {
             if (anunciado.compareAndSet(false, true)) {
-                Log.d(TAG, "📞 [1.5 s fallback] valorBruto='$valorBruto'")
+                Log.d(TAG, "[1.5 s fallback] valorBruto='$valorBruto'")
                 anunciarLlamada(valorBruto)
             }
         }
@@ -246,7 +246,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
                 mainHandler.removeCallbacks(fallbackRunnable)
                 if (anunciado.compareAndSet(false, true)) {
                     val callerName = nombre?.takeIf { it.isNotBlank() } ?: valorBruto
-                    Log.d(TAG, "📞 [contacto] callerName='$callerName'")
+                    Log.d(TAG, "[contacto] callerName='$callerName'")
                     anunciarLlamada(callerName)
                 }
             }
@@ -288,7 +288,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
 
     private fun leerNotificacion(appName: String, titulo: String, texto: String) {
         if (!ttsListo) {
-            Log.e(TAG, "❌ TTS no está listo")
+            Log.e(TAG, "TTS no está listo")
             return
         }
 
@@ -306,7 +306,7 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
             if (texto.isNotEmpty() && texto != titulo) append(texto)
         }
 
-        Log.d(TAG, "🔊 Leyendo: $mensaje")
+        Log.d(TAG, "Leyendo: $mensaje")
         hablarEnFragmentos(mensaje)
     }
 
@@ -387,6 +387,6 @@ class NotificationReaderService : NotificationListenerService(), TextToSpeech.On
         llamadasAnunciadas.clear()
         ultimoTextoLeido.clear()
         snapshotInicial.clear()
-        Log.d(TAG, "🔚 Servicio de notificaciones destruido")
+        Log.d(TAG, "Servicio de notificaciones destruido")
     }
 }

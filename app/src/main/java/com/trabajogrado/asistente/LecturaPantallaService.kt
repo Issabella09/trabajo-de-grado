@@ -24,13 +24,13 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     // Métodos para controlar el servicio desde la app
     fun activarLectura() {
-        Log.d(TAG, "🎯 ACTIVANDO lectura de pantalla por comando del usuario")
+        Log.d(TAG, "ACTIVANDO lectura de pantalla por comando del usuario")
         Companion.lecturaActiva = true  // ← Usar la del companion
         hablar("Lectura de pantalla activada")
     }
 
     fun desactivarLectura() {
-        Log.d(TAG, "🎯 DESACTIVANDO lectura de pantalla por comando del usuario")
+        Log.d(TAG, "DESACTIVANDO lectura de pantalla por comando del usuario")
         Companion.lecturaActiva = false  // ← Usar la del companion
         textToSpeech.stop()
         hablar("Lectura de pantalla desactivada")
@@ -38,7 +38,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
     fun actualizarConfiguracionNotificaciones() {
         cargarConfiguracionNotificaciones()
-        Log.d(TAG, "🔄 Configuración de notificaciones actualizada: $isLecturaNotificacionesActiva")
+        Log.d(TAG, "Configuración de notificaciones actualizada: $isLecturaNotificacionesActiva")
     }
 
     fun estaActivo(): Boolean {
@@ -67,12 +67,12 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             nivelLectura = nivel
             lecturaActiva = true
             instance?.activarLectura() // Llama a tu método existente
-            Log.d("LecturaService", "📢 Lectura activada - Nivel: $nivel")
+            Log.d("LecturaService", "Lectura activada - Nivel: $nivel")
         }
 
         fun actualizarNivelLectura(nuevoNivel: Int) {
             nivelLectura = nuevoNivel
-            Log.d("LecturaService", "🔄 Nivel actualizado: $nuevoNivel")
+            Log.d("LecturaService", "Nivel actualizado: $nuevoNivel")
         }
 
         fun obtenerNivelActual(): Int {
@@ -93,7 +93,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         fun actualizarConfiguracionNotificaciones() {
             instance?.actualizarConfiguracionNotificaciones()
-            Log.d("LecturaService", "🔄 Solicitada actualización de configuración de notificaciones")
+            Log.d("LecturaService", "Solicitada actualización de configuración de notificaciones")
         }
 
         // El AccessibilityService está exento de las restricciones de lanzamiento desde segundo plano
@@ -114,12 +114,12 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     override fun onServiceConnected() {
-        Log.d(TAG, "✅ Servicio de lectura de pantalla CONECTADO")
+        Log.d(TAG, "Servicio de lectura de pantalla CONECTADO")
         instance = this
 
         val prefs = getSharedPreferences("PrefsAsistente", MODE_PRIVATE)
         Companion.lecturaActiva = prefs.getBoolean("lectura_activa", false)
-        Log.d(TAG, "🔄 Estado restaurado: lecturaActiva=${Companion.lecturaActiva}")
+        Log.d(TAG, "Estado restaurado: lecturaActiva=${Companion.lecturaActiva}")
 
         // Configurar el servicio de accesibilidad
         configurarServicio()
@@ -131,7 +131,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         // IMPORTANTE: No hablar ni activar funcionalidad aquí
         // El usuario controlará cuándo activar desde la app
-        Log.d(TAG, "⚠️ Servicio configurado pero NO activado - Esperando comando del usuario")
+        Log.d(TAG, "Servicio configurado pero NO activado - Esperando comando del usuario")
     }
 
     private fun configurarServicio() {
@@ -167,7 +167,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         try {
             val sharedPref = getSharedPreferences("config_notificaciones", MODE_PRIVATE)
             isLecturaNotificacionesActiva = sharedPref.getBoolean("lectura_automatica", false)
-            Log.d(TAG, "📢 Configuración notificaciones cargada: $isLecturaNotificacionesActiva")
+            Log.d(TAG, "Configuración notificaciones cargada: $isLecturaNotificacionesActiva")
         } catch (e: Exception) {
             Log.e(TAG, "Error cargando configuración notificaciones: ${e.message}")
         }
@@ -186,7 +186,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
                     // Leer la notificación
                     val mensaje = "Notificación de $nombreApp: $textoNotificacion"
-                    Log.d(TAG, "🔔 Leyendo notificación: $mensaje")
+                    Log.d(TAG, "Leyendo notificación: $mensaje")
                     leerEnVozAlta(mensaje)
 
                     // Marcar como leída con timestamp y limpiar caché
@@ -271,17 +271,17 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "❌ El idioma español no está soportado")
+                Log.e(TAG, "El idioma español no está soportado")
             } else {
                 // NO hablar automáticamente - solo configurar
                 textToSpeech.setPitch(0.95f)
                 textToSpeech.setSpeechRate(1.0f)
 
-                Log.d(TAG, "🎤 TextToSpeech listo pero SILENCIADO - Esperando activación")
+                Log.d(TAG, "TextToSpeech listo pero SILENCIADO - Esperando activación")
                 // NO llamar a hablar() aquí
             }
         } else {
-            Log.e(TAG, "❌ Error al inicializar TextToSpeech")
+            Log.e(TAG, "Error al inicializar TextToSpeech")
         }
     }
 
@@ -297,7 +297,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         if (!Companion.lecturaActiva) return  // ← CAMBIA: lecturaActiva → Companion.lecturaActiva
 
         event?.let {
-            Log.d(TAG, "📱 Evento detectado: ${event.eventType} - App: ${event.packageName} - Nivel: ${Companion.nivelLectura}")  // ← CAMBIA: nivelLectura → Companion.nivelLectura
+            Log.d(TAG, "Evento detectado: ${event.eventType} - App: ${event.packageName} - Nivel: ${Companion.nivelLectura}")  // ← CAMBIA: nivelLectura → Companion.nivelLectura
 
             when (Companion.nivelLectura) {  // ← CAMBIA: nivelLectura → Companion.nivelLectura
                 1 -> procesarEventoNivel1(event)
@@ -332,7 +332,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 }
             }
         } else {
-            Log.d(TAG, "🔇 Nivel 1: Ignorando evento en app no mensajería")
+            Log.d(TAG, "Nivel 1: Ignorando evento en app no mensajería")
         }
     }
 
@@ -402,7 +402,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerElementoDesplazado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "🔄 Elemento desplazado: $texto")
+            Log.d(TAG, "Elemento desplazado: $texto")
             if (Companion.lecturaActiva) {
                 hablar("Desplazando: $texto")
             }
@@ -412,7 +412,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerElementoLargoTocado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "👆🔒 Elemento largo tocado: $texto")
+            Log.d(TAG, "Elemento largo tocado: $texto")
             if (Companion.lecturaActiva) {
                 hablar("Mantener presionado: $texto")
             }
@@ -422,7 +422,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerEventoGenerico(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "📝 Evento genérico [${event.eventType}]: $texto")
+            Log.d(TAG, "Evento genérico [${event.eventType}]: $texto")
             if (Companion.lecturaActiva) {
                 // Solo leer si es un texto significativo (no muy largo)
                 if (texto.length < 100) {
@@ -458,7 +458,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
         // Solo anunciar si es una app diferente a la última anunciada
         if (nombreApp != null && nombreApp != ultimaAppAnunciada) {
-            Log.d(TAG, "🔄 App detectada: $nombreApp (SILENCIO)")
+            Log.d(TAG, "App detectada: $nombreApp (SILENCIO)")
             if (Companion.lecturaActiva) {  // ← CAMBIADO: Usar Companion.lecturaActiva
                 hablar(nombreApp)
             }
@@ -469,7 +469,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerElementoTocado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "👆 Elemento tocado (SILENCIO): $texto")
+            Log.d(TAG, "Elemento tocado (SILENCIO): $texto")
             if (Companion.lecturaActiva) {  // ← CAMBIADO
                 hablar(texto)
             }
@@ -486,12 +486,12 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
                 tipoElemento != null -> "$texto, $tipoElemento"
                 else -> texto
             }
-            Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $mensaje")
+            Log.d(TAG, "Elemento con foco (SILENCIO): $mensaje")
             if (Companion.lecturaActiva) {
                 hablar(mensaje)
             }
         } else if (tipoElemento != null) {
-            Log.d(TAG, "🎯 Elemento con foco (SILENCIO): $tipoElemento")
+            Log.d(TAG, "Elemento con foco (SILENCIO): $tipoElemento")
             if (Companion.lecturaActiva) {  // ← ELIMINA el "if" duplicado
                 hablar(tipoElemento)
             }
@@ -501,7 +501,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     private fun leerElementoSeleccionado(event: AccessibilityEvent) {
         val texto = obtenerTextoDelEvento(event)
         if (texto.isNotBlank()) {
-            Log.d(TAG, "✅ Elemento seleccionado (SILENCIO): $texto")
+            Log.d(TAG, "Elemento seleccionado (SILENCIO): $texto")
             if (Companion.lecturaActiva) {  // ← CAMBIADO
                 hablar("Seleccionado: $texto")
             }
@@ -513,7 +513,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         // Solo leer texto si es un campo de entrada y tiene contenido
         if (texto.isNotBlank() && event.className?.toString()?.contains("EditText") == true) {
             if (texto.length > 2 && texto.length < 50) { // No leer textos muy largos
-                Log.d(TAG, "📝 Texto escrito: $texto")
+                Log.d(TAG, "Texto escrito: $texto")
                 //hablar(texto) // Opcional: comentado para no ser intrusivo
             }
         }
@@ -548,7 +548,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
     }
 
     override fun onInterrupt() {
-        Log.d(TAG, "⏸️ Servicio interrumpido")
+        Log.d(TAG, "Servicio interrumpido")
         textToSpeech.stop()
     }
 
@@ -557,7 +557,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         // Liberar recursos
         textToSpeech.stop()
         textToSpeech.shutdown()
-        Log.d(TAG, "🔚 Servicio destruido")
+        Log.d(TAG, "Servicio destruido")
     }
 
     private fun hablar(texto: String) {
@@ -570,7 +570,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
         try {
             autoSendAttempts++
             if (autoSendAttempts > 10) {
-                Log.w("EVA_WA", "⚠️ autoSendAttempts superó 10 — abortando auto-send")
+                Log.w("EVA_WA", "autoSendAttempts superó 10 — abortando auto-send")
                 pendingAutoSend = false
                 autoSendAttempts = 0
                 return
@@ -591,7 +591,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
 
             if (boton != null) {
                 boton.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
-                Log.d("EVA_WA", "✅ Mensaje enviado, nodo: ${boton.viewIdResourceName}")
+                Log.d("EVA_WA", "Mensaje enviado, nodo: ${boton.viewIdResourceName}")
                 pendingAutoSend = false
                 autoSendAttempts = 0
             }
@@ -623,7 +623,7 @@ class LecturaPantallaService : AccessibilityService(), TextToSpeech.OnInitListen
             encontrarBotonEnviar(raiz)?.performAction(
                 android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
             )
-            Log.d(TAG, "✅ Botón enviar clicado en $packageDestino")
+            Log.d(TAG, "Botón enviar clicado en $packageDestino")
         } catch (e: Exception) {
             Log.e(TAG, "Error clicando botón enviar: ${e.message}")
         }
